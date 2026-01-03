@@ -250,18 +250,18 @@ opencode-ralph/
 
 ### Phase 6: TUI Components - Footer
 
-- [ ] **6.1** Create `src/components/footer.tsx` with basic structure:
+- [x] **6.1** Create `src/components/footer.tsx` with basic structure:
   - Import `solid-js` and colors
   - Export `Footer` component that takes props: `commits`, `elapsed`, `paused`
   - Return a `<box>` with `flexDirection="row"` and top border
 
-- [ ] **6.2** Add keybind hints to Footer (left side):
+- [x] **6.2** Add keybind hints to Footer (left side):
   - Text: `p pause · q quit · ↑↓ scroll`
   - Use muted color for separators, normal for keys
 
-- [ ] **6.3** Add spacer `<box flexGrow={1} />` between left and right
+- [x] **6.3** Add spacer `<box flexGrow={1} />` between left and right
 
-- [ ] **6.4** Add stats to Footer (right side):
+- [x] **6.4** Add stats to Footer (right side):
   - Text: `{commits} commits · {formatDuration(elapsed)}`
   - Use muted color
 
