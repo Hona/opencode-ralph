@@ -567,7 +567,7 @@ opencode-ralph/
   - `bun install` command
   - Optional: global install with `bun link`
 
-- [ ] **13.3** Add usage section to README:
+- [x] **13.3** Add usage section to README:
   - Basic usage: `ralph`
   - With options: `ralph --plan BACKLOG.md --model anthropic/claude-opus-4`
   - All CLI options table

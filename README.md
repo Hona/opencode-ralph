@@ -61,3 +61,52 @@ bun link
 
 After linking, you can run `ralph` from any directory.
 
+## Usage
+
+### Basic Usage
+
+```bash
+# Run with defaults (uses plan.md in current directory)
+ralph
+
+# Or with bun directly
+bun run src/index.ts
+```
+
+### With Options
+
+```bash
+# Use a different plan file
+ralph --plan BACKLOG.md
+
+# Use a specific model
+ralph --model anthropic/claude-opus-4
+
+# Use a custom prompt template
+ralph --prompt "Read {plan} and complete one task..."
+
+# Reset state and start fresh
+ralph --reset
+
+# Combine multiple options
+ralph --plan tasks.md --model opencode/gpt-4o --reset
+```
+
+### CLI Options
+
+| Option | Alias | Type | Default | Description |
+|--------|-------|------|---------|-------------|
+| `--plan` | `-p` | string | `plan.md` | Path to the plan file |
+| `--model` | `-m` | string | `opencode/claude-opus-4-5` | Model to use (provider/model format) |
+| `--prompt` | | string | (see below) | Custom prompt template (use `{plan}` as placeholder) |
+| `--reset` | `-r` | boolean | `false` | Reset state and start fresh |
+| `--help` | `-h` | | | Show help |
+
+### Default Prompt
+
+The default prompt template used when `--prompt` is not specified:
+
+```
+READ all of {plan}. Pick ONE task. If needed, verify via web/code search. Complete task. Commit change (update the plan.md in the same commit). ONLY do one task unless GLARINGLY OBVIOUS steps should run together. Update {plan}. If you learn a critical operational detail, update AGENTS.md. When ALL tasks complete, create .ralph-done and exit. NEVER GIT PUSH. ONLY COMMIT.
+```
+
