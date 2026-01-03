@@ -32,5 +32,15 @@ describe("time utilities", () => {
         expect(formatDuration(7200000)).toBe("2h 0m");
       });
     });
+
+    describe("edge cases", () => {
+      it("should format 0ms as '0s'", () => {
+        expect(formatDuration(0)).toBe("0s");
+      });
+
+      it("should format 999ms as '0s' (rounds down)", () => {
+        expect(formatDuration(999)).toBe("0s");
+      });
+    });
   });
 });
