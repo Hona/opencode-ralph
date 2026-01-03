@@ -528,7 +528,7 @@ opencode-ralph/
 
 ### Phase 12: Integration and Testing
 
-- [ ] **12.1** Create minimal test plan file for manual testing:
+- [x] **12.1** Create minimal test plan file for manual testing:
   - Create `test-plan.md` with a few checkbox items
   - Test parsing with `parsePlan()`
 
