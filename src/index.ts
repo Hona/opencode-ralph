@@ -107,35 +107,82 @@ const { exitPromise, stateSetters } = startApp({
   },
 });
 
-// Start the loop in parallel - callbacks will be wired up in task 11.7
-// For now, we just start the loop without full callback wiring
+// Start the loop in parallel with callbacks wired to app state
 runLoop(loopOptions, stateToUse, {
-  onIterationStart: (_iteration) => {
-    // TODO: Wire up in 11.7
+  onIterationStart: (iteration) => {
+    // Update state.iteration and status to running
+    stateSetters.setState((prev) => ({
+      ...prev,
+      status: "running",
+      iteration,
+    }));
   },
-  onEvent: (_event) => {
-    // TODO: Wire up in 11.7
+  onEvent: (event) => {
+    // Append event to state.events
+    stateSetters.setState((prev) => ({
+      ...prev,
+      events: [...prev.events, event],
+    }));
   },
-  onIterationComplete: (_iteration, _duration, _commits) => {
-    // TODO: Wire up in 11.7
+  onIterationComplete: (iteration, duration, commits) => {
+    // Update the separator event for this iteration with duration/commits
+    stateSetters.setState((prev) => ({
+      ...prev,
+      events: prev.events.map((event) =>
+        event.type === "separator" && event.iteration === iteration
+          ? { ...event, duration, commitCount: commits }
+          : event
+      ),
+    }));
+    // Update persisted state with the new iteration time
+    stateToUse.iterationTimes.push(duration);
+    saveState(stateToUse);
+    // Update the iteration times in the app for ETA calculation
+    stateSetters.updateIterationTimes([...stateToUse.iterationTimes]);
   },
-  onTasksUpdated: (_done, _total) => {
-    // TODO: Wire up in 11.7
+  onTasksUpdated: (done, total) => {
+    // Update state.tasksComplete and state.totalTasks
+    stateSetters.setState((prev) => ({
+      ...prev,
+      tasksComplete: done,
+      totalTasks: total,
+    }));
   },
-  onCommitsUpdated: (_commits) => {
-    // TODO: Wire up in 11.7
+  onCommitsUpdated: (commits) => {
+    // Update state.commits
+    stateSetters.setState((prev) => ({
+      ...prev,
+      commits,
+    }));
   },
   onPause: () => {
-    // TODO: Wire up in 11.7
+    // Update state.status to "paused"
+    stateSetters.setState((prev) => ({
+      ...prev,
+      status: "paused",
+    }));
   },
   onResume: () => {
-    // TODO: Wire up in 11.7
+    // Update state.status to "running"
+    stateSetters.setState((prev) => ({
+      ...prev,
+      status: "running",
+    }));
   },
   onComplete: () => {
-    // TODO: Wire up in 11.7
+    // Update state.status to "complete"
+    stateSetters.setState((prev) => ({
+      ...prev,
+      status: "complete",
+    }));
   },
-  onError: (_error) => {
-    // TODO: Wire up in 11.7
+  onError: (error) => {
+    // Update state.status to "error" and set state.error
+    stateSetters.setState((prev) => ({
+      ...prev,
+      status: "error",
+      error,
+    }));
   },
 }, abortController.signal).catch((error) => {
   console.error("Loop error:", error);

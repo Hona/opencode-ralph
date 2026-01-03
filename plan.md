@@ -508,7 +508,7 @@ opencode-ralph/
   - Call `startApp()` with options, state, and quit handler
   - Start `runLoop()` in parallel with callbacks wired to app state
 
-- [ ] **11.7** Wire up loop callbacks to app state updates:
+- [x] **11.7** Wire up loop callbacks to app state updates:
   - `onIterationStart`: update state.iteration, add separator event
   - `onEvent`: append to state.events
   - `onIterationComplete`: update separator with duration/commits, save state
