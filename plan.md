@@ -503,7 +503,7 @@ opencode-ralph/
   - Get HEAD hash with `getHeadHash()`
   - Create new `PersistedState` with current time, hash, empty iterationTimes, planFile
 
-- [ ] **11.6** Add TUI launch:
+- [x] **11.6** Add TUI launch:
   - Create abort controller for cancellation
   - Call `startApp()` with options, state, and quit handler
   - Start `runLoop()` in parallel with callbacks wired to app state

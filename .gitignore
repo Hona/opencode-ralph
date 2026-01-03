@@ -1,1 +1,5 @@
 node_modules/
+.ralph-lock
+.ralph-state.json
+.ralph-pause
+.ralph-done

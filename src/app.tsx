@@ -1,5 +1,5 @@
 import { render, useKeyboard } from "@opentui/solid";
-import { createSignal, onCleanup } from "solid-js";
+import { createSignal, onCleanup, Setter } from "solid-js";
 import { Header } from "./components/header";
 import { Log } from "./components/log";
 import { Footer } from "./components/footer";
@@ -12,33 +12,77 @@ type AppProps = {
   options: LoopOptions;
   persistedState: PersistedState;
   onQuit: () => void;
+  iterationTimesRef?: number[];
 };
+
+/**
+ * State setters returned from startApp to allow external state updates.
+ */
+export type AppStateSetters = {
+  setState: Setter<LoopState>;
+  updateIterationTimes: (times: number[]) => void;
+};
+
+/**
+ * Result of starting the app - contains both the exit promise and state setters.
+ */
+export type StartAppResult = {
+  exitPromise: Promise<void>;
+  stateSetters: AppStateSetters;
+};
+
+// Module-level state setters that will be populated when App renders
+let globalSetState: Setter<LoopState> | null = null;
+let globalUpdateIterationTimes: ((times: number[]) => void) | null = null;
 
 /**
  * Main App component with state signals.
  * Manages LoopState and elapsed time, rendering the full TUI layout.
  */
 /**
- * Starts the TUI application and returns a promise that resolves when the app exits.
+ * Starts the TUI application and returns a promise that resolves when the app exits,
+ * along with state setters for external updates.
  *
  * @param props - The application props including options, persisted state, and quit handler
- * @returns Promise that resolves when the app exits
+ * @returns StartAppResult with exitPromise and stateSetters
  */
-export function startApp(props: AppProps): Promise<void> {
-  return new Promise<void>((resolve) => {
+export function startApp(props: AppProps): StartAppResult {
+  // Create a mutable reference to iteration times that can be updated externally
+  let iterationTimesRef = [...props.persistedState.iterationTimes];
+  
+  const exitPromise = new Promise<void>((resolve) => {
     const onQuit = () => {
       props.onQuit();
       resolve();
     };
 
     render(
-      () => <App {...props} onQuit={onQuit} />,
+      () => <App {...props} onQuit={onQuit} iterationTimesRef={iterationTimesRef} />,
       {
         targetFps: 30,
         exitOnCtrlC: false,
       }
     );
   });
+
+  // Return state setters that will be available after render
+  const stateSetters: AppStateSetters = {
+    setState: (update) => {
+      if (globalSetState) {
+        return globalSetState(update);
+      }
+      return {} as LoopState;
+    },
+    updateIterationTimes: (times) => {
+      iterationTimesRef.length = 0;
+      iterationTimesRef.push(...times);
+      if (globalUpdateIterationTimes) {
+        globalUpdateIterationTimes(times);
+      }
+    },
+  };
+
+  return { exitPromise, stateSetters };
 }
 
 export function App(props: AppProps) {
@@ -52,6 +96,15 @@ export function App(props: AppProps) {
     events: [],
   });
 
+  // Signal to track iteration times (for ETA calculation)
+  const [iterationTimes, setIterationTimes] = createSignal<number[]>(
+    props.iterationTimesRef || [...props.persistedState.iterationTimes]
+  );
+
+  // Export the state setter to module scope for external access
+  globalSetState = setState;
+  globalUpdateIterationTimes = (times: number[]) => setIterationTimes(times);
+
   // Track elapsed time from the persisted start time
   const [elapsed, setElapsed] = createSignal(
     Date.now() - props.persistedState.startTime
@@ -64,13 +117,16 @@ export function App(props: AppProps) {
 
   onCleanup(() => {
     clearInterval(elapsedInterval);
+    // Clean up module-level references
+    globalSetState = null;
+    globalUpdateIterationTimes = null;
   });
 
   // Calculate ETA based on iteration times and remaining tasks
   const eta = () => {
     const currentState = state();
     const remainingTasks = currentState.totalTasks - currentState.tasksComplete;
-    return calculateEta(props.persistedState.iterationTimes, remainingTasks);
+    return calculateEta(iterationTimes(), remainingTasks);
   };
 
   // Pause file path

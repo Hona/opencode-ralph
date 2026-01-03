@@ -2,9 +2,11 @@
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { acquireLock, releaseLock } from "./lock";
-import { loadState, saveState, PersistedState } from "./state";
+import { loadState, saveState, PersistedState, LoopOptions } from "./state";
 import { confirm } from "./prompt";
 import { getHeadHash } from "./git";
+import { startApp } from "./app";
+import { runLoop } from "./loop";
 
 const argv = await yargs(hideBin(process.argv))
   .scriptName("ralph")
@@ -86,11 +88,58 @@ if (!stateToUse) {
   await saveState(stateToUse);
 }
 
-// TODO: Implement remaining startup logic in 11.6-11.9
-console.log("Ralph starting with options:", {
-  plan: argv.plan,
+// Create LoopOptions from CLI arguments
+const loopOptions: LoopOptions = {
+  planFile: argv.plan,
   model: argv.model,
-  prompt: argv.prompt,
-  shouldReset,
-  stateToUse: stateToUse ? "resuming" : "fresh start",
+  prompt: argv.prompt || "",
+};
+
+// Create abort controller for cancellation
+const abortController = new AbortController();
+
+// Start the TUI app and get state setters
+const { exitPromise, stateSetters } = startApp({
+  options: loopOptions,
+  persistedState: stateToUse,
+  onQuit: () => {
+    abortController.abort();
+  },
 });
+
+// Start the loop in parallel - callbacks will be wired up in task 11.7
+// For now, we just start the loop without full callback wiring
+runLoop(loopOptions, stateToUse, {
+  onIterationStart: (_iteration) => {
+    // TODO: Wire up in 11.7
+  },
+  onEvent: (_event) => {
+    // TODO: Wire up in 11.7
+  },
+  onIterationComplete: (_iteration, _duration, _commits) => {
+    // TODO: Wire up in 11.7
+  },
+  onTasksUpdated: (_done, _total) => {
+    // TODO: Wire up in 11.7
+  },
+  onCommitsUpdated: (_commits) => {
+    // TODO: Wire up in 11.7
+  },
+  onPause: () => {
+    // TODO: Wire up in 11.7
+  },
+  onResume: () => {
+    // TODO: Wire up in 11.7
+  },
+  onComplete: () => {
+    // TODO: Wire up in 11.7
+  },
+  onError: (_error) => {
+    // TODO: Wire up in 11.7
+  },
+}, abortController.signal).catch((error) => {
+  console.error("Loop error:", error);
+});
+
+// Wait for the app to exit
+await exitPromise;
