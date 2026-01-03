@@ -29,3 +29,15 @@ export async function acquireLock(): Promise<boolean> {
   await Bun.write(LOCK_FILE, String(process.pid));
   return true;
 }
+
+/**
+ * Releases the lock file if it exists.
+ */
+export async function releaseLock(): Promise<void> {
+  const file = Bun.file(LOCK_FILE);
+  const exists = await file.exists();
+
+  if (exists) {
+    await file.delete();
+  }
+}

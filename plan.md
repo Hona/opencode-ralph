@@ -171,9 +171,9 @@ opencode-ralph/
   - Write current PID to lock file
   - Return `true`
 
-- [ ] **3.9** Add `releaseLock(): Promise<void>` to `src/lock.ts`:
+- [x] **3.9** Add `releaseLock(): Promise<void>` to `src/lock.ts`:
   - Check if lock file exists
-  - If exists, delete with `Bun.file(LOCK_FILE).unlink()` or `fs.unlink`
+  - If exists, delete with `Bun.file(LOCK_FILE).delete()`
 
 - [ ] **3.10** Create `src/prompt.ts` with `confirm(message: string): Promise<boolean>`:
   - Print message + `(y/n)` to stdout
