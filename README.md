@@ -130,3 +130,17 @@ All files are gitignored by default. Add them to your `.gitignore` if not alread
 .ralph-pause
 ```
 
+## Keybindings
+
+| Key | Action |
+|-----|--------|
+| `p` | Toggle pause - creates/deletes `.ralph-pause` file |
+| `q` | Quit the application |
+| `Ctrl+C` | Quit the application |
+| `↑` / `k` | Scroll up |
+| `↓` / `j` | Scroll down |
+| `Page Up` | Scroll up half viewport |
+| `Page Down` | Scroll down half viewport |
+| `Home` | Scroll to top |
+| `End` | Scroll to bottom |
+

@@ -578,7 +578,7 @@ opencode-ralph/
   - `.ralph-done` - Created by agent when plan complete
   - `.ralph-pause` - Created by user to pause loop
 
-- [ ] **13.5** Add keybindings table to README:
+- [x] **13.5** Add keybindings table to README:
   - `p` - Toggle pause
   - `q` - Quit
   - `↑/k` - Scroll up
