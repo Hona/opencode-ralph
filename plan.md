@@ -68,7 +68,7 @@ Comprehensive test suite for the Ralph TUI harness using Bun's built-in test run
   - Given markdown with code blocks containing `- [ ]`
   - Should not count code block checkboxes (or document current behavior)
 
-- [ ] **2.8** Test `parsePlan()` handles nested lists:
+- [x] **2.8** Test `parsePlan()` handles nested lists:
   - Given nested checkbox items
   - Should count all checkboxes at any nesting level
 
@@ -76,11 +76,11 @@ Comprehensive test suite for the Ralph TUI harness using Bun's built-in test run
 
 ## Phase 3: Unit Tests - Time Utilities (`src/util/time.ts`)
 
-- [ ] **3.1** Test `formatDuration()` for seconds only:
+- [x] **3.1** Test `formatDuration()` for seconds only:
   - `formatDuration(5000)` should return `"5s"`
   - `formatDuration(59000)` should return `"59s"`
 
-- [ ] **3.2** Test `formatDuration()` for minutes and seconds:
+- [x] **3.2** Test `formatDuration()` for minutes and seconds:
   - `formatDuration(90000)` should return `"1m 30s"`
   - `formatDuration(300000)` should return `"5m 0s"`
 
