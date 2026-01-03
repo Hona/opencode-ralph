@@ -418,7 +418,7 @@ opencode-ralph/
   - Check for `.ralph-done` file at start of each iteration
   - Check for `.ralph-pause` file, call callbacks and sleep if exists
 
-- [ ] **10.9** Implement `.ralph-done` check:
+- [x] **10.9** Implement `.ralph-done` check:
   - Use `Bun.file(".ralph-done").exists()`
   - If exists, delete file, call `callbacks.onComplete()`, break loop
 
