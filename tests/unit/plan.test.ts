@@ -19,4 +19,9 @@ describe("parsePlan", () => {
     const result = await parsePlan(path.join(fixturesDir, "empty.md"));
     expect(result).toEqual({ done: 0, total: 0 });
   });
+
+  it("should return { done: 5, total: 5 } for all completed tasks", async () => {
+    const result = await parsePlan(path.join(fixturesDir, "all-complete.md"));
+    expect(result).toEqual({ done: 5, total: 5 });
+  });
 });
