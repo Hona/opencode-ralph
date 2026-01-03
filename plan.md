@@ -441,7 +441,7 @@ opencode-ralph/
   - Call `client.session.create()`
   - Extract session ID from response
 
-- [ ] **10.14** Implement prompt sending:
+- [x] **10.14** Implement prompt sending:
   - Build prompt with `buildPrompt(options)`
   - Parse model with `parseModel(options.model)`
   - Call `client.session.prompt()` with session ID, parts, model

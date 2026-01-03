@@ -103,7 +103,26 @@ export async function runLoop(
       }
       const sessionId = sessionResult.data.id;
 
-      // TODO: Implement prompt sending (10.14)
+      // Send prompt (10.14)
+      const promptText = buildPrompt(options);
+      const { providerID, modelID } = parseModel(options.model);
+      
+      await client.session.prompt({
+        path: { id: sessionId },
+        body: {
+          parts: [
+            {
+              type: "text",
+              text: promptText,
+            },
+          ],
+          model: {
+            providerID,
+            modelID,
+          },
+        },
+      });
+
       // TODO: Implement event streaming (10.15)
       // TODO: Implement tool event mapping (10.16)
       // TODO: Implement session completion detection (10.17)
