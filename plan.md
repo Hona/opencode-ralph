@@ -175,7 +175,7 @@ opencode-ralph/
   - Check if lock file exists
   - If exists, delete with `Bun.file(LOCK_FILE).delete()`
 
-- [ ] **3.10** Create `src/prompt.ts` with `confirm(message: string): Promise<boolean>`:
+- [x] **3.10** Create `src/prompt.ts` with `confirm(message: string): Promise<boolean>`:
   - Print message + `(y/n)` to stdout
   - Read single character from stdin
   - Return `true` if 'y' or 'Y', `false` otherwise
