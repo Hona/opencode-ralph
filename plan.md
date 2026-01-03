@@ -537,7 +537,7 @@ opencode-ralph/
   - Try running second instance, verify error message
   - Kill first instance, verify lock released
 
-- [ ] **12.3** Test state persistence:
+- [x] **12.3** Test state persistence:
   - Run `ralph`, let it complete one iteration
   - Kill with Ctrl+C
   - Run again, verify resume prompt appears
