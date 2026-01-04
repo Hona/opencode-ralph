@@ -101,10 +101,10 @@ Comprehensive test suite for the Ralph TUI harness using Bun's built-in test run
 - [x] **3.7** Test `calculateEta()` with multiple iterations:
   - `calculateEta([60000, 120000, 90000], 4)` should return `360000` (avg 90000 * 4)
 
-- [ ] **3.8** Test `calculateEta()` with zero remaining tasks:
+- [x] **3.8** Test `calculateEta()` with zero remaining tasks:
   - `calculateEta([60000], 0)` should return `0`
 
-- [ ] **3.9** Test `formatEta()` with null:
+- [x] **3.9** Test `formatEta()` with null:
   - `formatEta(null)` should return `"--:--"`
 
 - [ ] **3.10** Test `formatEta()` with valid duration:

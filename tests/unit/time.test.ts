@@ -65,5 +65,20 @@ describe("time utilities", () => {
         expect(calculateEta([60000, 120000, 90000], 4)).toBe(360000);
       });
     });
+
+    describe("zero remaining tasks", () => {
+      it("should return 0 when remaining tasks is 0", () => {
+        // Any average * 0 remaining tasks = 0
+        expect(calculateEta([60000], 0)).toBe(0);
+      });
+    });
+  });
+
+  describe("formatEta", () => {
+    describe("null input", () => {
+      it("should return '--:--' when given null", () => {
+        expect(formatEta(null)).toBe("--:--");
+      });
+    });
   });
 });
