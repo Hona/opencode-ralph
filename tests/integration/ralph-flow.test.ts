@@ -321,4 +321,57 @@ describe("ralph flow integration", () => {
     expect(capturedTasks).not.toBeNull();
     expect(capturedTasks!.total).toBeGreaterThan(0);
   });
+
+  it("should call onPause and onResume when .ralph-pause file is created and removed", async () => {
+    const options: LoopOptions = {
+      planFile: testPlanFile,
+      model: "anthropic/claude-sonnet-4",
+      prompt: "Test prompt for {plan}",
+    };
+
+    const persistedState: PersistedState = {
+      startTime: Date.now(),
+      initialCommitHash: "abc123",
+      iterationTimes: [],
+      planFile: testPlanFile,
+    };
+
+    const callbacks = createTestCallbacks();
+    const controller = new AbortController();
+
+    cleanupFiles.push(".ralph-pause");
+    cleanupFiles.push(".ralph-done");
+
+    // Create .ralph-pause file before starting the loop
+    await Bun.write(".ralph-pause", "");
+
+    // Schedule removal of .ralph-pause after the first pause check cycle (loop sleeps 1000ms when paused)
+    setTimeout(async () => {
+      await unlink(".ralph-pause").catch(() => {});
+    }, 500);
+
+    // Schedule creation of .ralph-done after resume to stop the loop
+    // Need to wait for:
+    // - Initial pause detection + 1000ms sleep
+    // - Resume detection (pause file removed at 500ms, checked after sleep)
+    // - Then we can complete
+    setTimeout(async () => {
+      await Bun.write(".ralph-done", "");
+    }, 1200);
+
+    await runLoop(options, persistedState, callbacks, controller.signal);
+
+    // Verify onPause was called
+    expect(callbackOrder).toContain("onPause");
+
+    // Verify onResume was called after onPause
+    const pauseIndex = callbackOrder.indexOf("onPause");
+    const resumeIndex = callbackOrder.indexOf("onResume");
+    expect(pauseIndex).toBeGreaterThan(-1);
+    expect(resumeIndex).toBeGreaterThan(-1);
+    expect(resumeIndex).toBeGreaterThan(pauseIndex);
+
+    // Verify onComplete was called (due to .ralph-done file)
+    expect(callbackOrder).toContain("onComplete");
+  });
 });

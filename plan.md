@@ -221,7 +221,7 @@ Comprehensive test suite for the Ralph TUI harness using Bun's built-in test run
     5. `onIterationComplete`
     6. `onCommitsUpdated`
 
-- [ ] **8.2** Test pause/resume flow:
+- [x] **8.2** Test pause/resume flow:
   - Create `.ralph-pause` file during loop
   - Verify `onPause` callback called
   - Delete `.ralph-pause` file
