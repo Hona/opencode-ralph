@@ -56,7 +56,7 @@ Fix TUI freezing caused by memory leak and excessive CPU usage.
 
 ## Phase 7: Memory Profiling & Validation
 
-- [ ] Add memory usage logging to `src/util/log.ts` (log `process.memoryUsage()` periodically)
+- [x] Add memory usage logging to `src/util/log.ts` (log `process.memoryUsage()` periodically)
 - [ ] Create integration test that runs 50 mock iterations and asserts memory stays under 500MB
 - [ ] Document expected memory footprint in README.md
 - [ ] Add `--profile` CLI flag to enable verbose performance logging
