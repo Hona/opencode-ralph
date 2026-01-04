@@ -322,6 +322,88 @@ describe("ralph flow integration", () => {
     expect(capturedTasks!.total).toBeGreaterThan(0);
   });
 
+  it("should detect .ralph-done file and call onComplete", async () => {
+    const options: LoopOptions = {
+      planFile: testPlanFile,
+      model: "anthropic/claude-sonnet-4",
+      prompt: "Test prompt for {plan}",
+    };
+
+    const persistedState: PersistedState = {
+      startTime: Date.now(),
+      initialCommitHash: "abc123",
+      iterationTimes: [],
+      planFile: testPlanFile,
+    };
+
+    const callbacks = createTestCallbacks();
+    const controller = new AbortController();
+
+    cleanupFiles.push(".ralph-done");
+
+    // Create .ralph-done file BEFORE running the loop
+    // This tests that the loop detects it at the start of the first iteration
+    await Bun.write(".ralph-done", "");
+
+    await runLoop(options, persistedState, callbacks, controller.signal);
+
+    // Verify onComplete was called
+    expect(callbackOrder).toContain("onComplete");
+
+    // Verify the loop exited cleanly (no errors)
+    const errorEvents = callbackOrder.filter((c) => c.startsWith("onError:"));
+    expect(errorEvents).toHaveLength(0);
+
+    // Verify .ralph-done file was deleted by the loop
+    const doneFileExists = await Bun.file(".ralph-done").exists();
+    expect(doneFileExists).toBe(false);
+  });
+
+  it("should exit cleanly when .ralph-done is created mid-iteration", async () => {
+    const options: LoopOptions = {
+      planFile: testPlanFile,
+      model: "anthropic/claude-sonnet-4",
+      prompt: "Test prompt for {plan}",
+    };
+
+    const persistedState: PersistedState = {
+      startTime: Date.now(),
+      initialCommitHash: "abc123",
+      iterationTimes: [],
+      planFile: testPlanFile,
+    };
+
+    const callbacks = createTestCallbacks();
+    const controller = new AbortController();
+
+    cleanupFiles.push(".ralph-done");
+
+    // Schedule creation of .ralph-done after iteration starts but before it completes
+    // This simulates the agent creating .ralph-done when all tasks are complete
+    setTimeout(async () => {
+      await Bun.write(".ralph-done", "");
+    }, 100);
+
+    await runLoop(options, persistedState, callbacks, controller.signal);
+
+    // Verify at least one iteration started
+    const iterationStartEvents = callbackOrder.filter((c) =>
+      c.startsWith("onIterationStart:")
+    );
+    expect(iterationStartEvents.length).toBeGreaterThanOrEqual(1);
+
+    // Verify onComplete was called
+    expect(callbackOrder).toContain("onComplete");
+
+    // Verify the loop exited cleanly (no errors)
+    const errorEvents = callbackOrder.filter((c) => c.startsWith("onError:"));
+    expect(errorEvents).toHaveLength(0);
+
+    // Verify .ralph-done file was deleted
+    const doneFileExists = await Bun.file(".ralph-done").exists();
+    expect(doneFileExists).toBe(false);
+  });
+
   it("should call onPause and onResume when .ralph-pause file is created and removed", async () => {
     const options: LoopOptions = {
       planFile: testPlanFile,

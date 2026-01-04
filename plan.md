@@ -227,7 +227,7 @@ Comprehensive test suite for the Ralph TUI harness using Bun's built-in test run
   - Delete `.ralph-pause` file
   - Verify `onResume` callback called
 
-- [ ] **8.3** Test completion detection:
+- [x] **8.3** Test completion detection:
   - Create `.ralph-done` file during loop
   - Verify `onComplete` callback called
   - Verify loop exits cleanly
