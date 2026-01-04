@@ -11,6 +11,8 @@ export type LoopState = {
   tasksComplete: number;
   totalTasks: number;
   commits: number;
+  linesAdded: number;
+  linesRemoved: number;
   events: ToolEvent[];
   error?: string;
 };
@@ -26,6 +28,7 @@ export type ToolEvent = {
 };
 
 export const STATE_FILE = ".ralph-state.json";
+export const MAX_EVENTS = 200;
 
 export async function loadState(): Promise<PersistedState | null> {
   const file = Bun.file(STATE_FILE);
