@@ -224,9 +224,8 @@ async function main() {
         }));
       },
       onEvent: (event) => {
-        // Append event to state.events and trim to prevent unbounded growth
-        stateSetters.setState((prev) => ({
-          ...prev,
+        // Debounce event updates to batch rapid events within 50ms window
+        batchedUpdater.queueUpdate((prev) => ({
           events: trimEvents([...prev.events, event]),
         }));
       },
