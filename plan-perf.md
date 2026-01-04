@@ -44,7 +44,7 @@ Fix TUI freezing caused by memory leak and excessive CPU usage.
 - [x] Add `isIdle` state flag to `LoopState` in `src/state.ts`
 - [x] Set `isIdle: true` when waiting for LLM response (after prompt sent, before events arrive)
 - [x] Set `isIdle: false` when tool events start arriving
-- [ ] Skip elapsed timer updates when `isIdle: true` (reduce unnecessary re-renders)
+- [x] Skip elapsed timer updates when `isIdle: true` (reduce unnecessary re-renders)
 - [ ] Only animate spinner when `isIdle: false` (static spinner during idle waits)
 
 ## Phase 6: Scrollbox Optimization

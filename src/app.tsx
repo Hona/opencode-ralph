@@ -154,8 +154,11 @@ export function App(props: AppProps) {
   );
 
   // Update elapsed time periodically (2000ms to reduce render frequency)
+  // Skip updates when idle to reduce unnecessary re-renders
   const elapsedInterval = setInterval(() => {
-    setElapsed(Date.now() - props.persistedState.startTime);
+    if (!state().isIdle) {
+      setElapsed(Date.now() - props.persistedState.startTime);
+    }
   }, 2000);
 
   onCleanup(() => {
