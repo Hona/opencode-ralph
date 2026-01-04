@@ -168,7 +168,7 @@ Comprehensive test suite for the Ralph TUI harness using Bun's built-in test run
   - Should return 40-character hex string
   - Should match `git rev-parse HEAD` output
 
-- [ ] **6.2** Test `getCommitsSince()` with current HEAD:
+- [x] **6.2** Test `getCommitsSince()` with current HEAD:
   - `getCommitsSince(currentHead)` should return `0`
 
 - [ ] **6.3** Test `getCommitsSince()` with ancestor commit:

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { getHeadHash } from "../../src/git";
+import { getHeadHash, getCommitsSince } from "../../src/git";
 
 describe("git utilities", () => {
   describe("getHeadHash()", () => {
@@ -24,6 +24,16 @@ describe("git utilities", () => {
       await proc.exited;
 
       expect(hash).toBe(expectedHash);
+    });
+  });
+
+  describe("getCommitsSince()", () => {
+    it("should return 0 when given current HEAD", async () => {
+      const currentHead = await getHeadHash();
+      const count = await getCommitsSince(currentHead);
+
+      // There are no commits since HEAD, so count should be 0
+      expect(count).toBe(0);
     });
   });
 });
