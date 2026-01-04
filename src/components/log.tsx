@@ -1,4 +1,4 @@
-import { For, Show, createEffect, createMemo, createSignal, onCleanup } from "solid-js";
+import { For, Match, Show, Switch, createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 import { colors, TOOL_ICONS } from "./colors";
 import { formatDuration } from "../util/time";
 import type { ToolEvent } from "../state";
@@ -51,7 +51,6 @@ function getToolColor(icon: string | undefined): string {
 
 export type LogProps = {
   events: ToolEvent[];
-  isRunning: boolean;
   isIdle: boolean;
 };
 
@@ -157,7 +156,8 @@ function ToolEventItem(props: { event: ToolEvent }) {
  * Uses stickyScroll to keep the view at the bottom as new events arrive.
  * 
  * PERF: Uses <For> directly on props.events to avoid allocating wrapper objects.
- * Spinner is rendered conditionally outside the loop to avoid array allocations.
+ * Spinner is managed as an event in the array, always kept at the end to ensure
+ * it renders at the bottom of the scrollable content.
  */
 export function Log(props: LogProps) {
   return (
@@ -180,17 +180,19 @@ export function Log(props: LogProps) {
     >
       <For each={props.events}>
         {(event) => (
-          <Show
-            when={event.type === "separator"}
-            fallback={<ToolEventItem event={event} />}
-          >
-            <SeparatorEvent event={event} />
-          </Show>
+          <Switch>
+            <Match when={event.type === "spinner"}>
+              <Spinner isIdle={props.isIdle} />
+            </Match>
+            <Match when={event.type === "separator"}>
+              <SeparatorEvent event={event} />
+            </Match>
+            <Match when={event.type === "tool"}>
+              <ToolEventItem event={event} />
+            </Match>
+          </Switch>
         )}
       </For>
-      <Show when={props.isRunning}>
-        <Spinner isIdle={props.isIdle} />
-      </Show>
     </scrollbox>
   );
 }

@@ -20,7 +20,7 @@ export type LoopState = {
 
 export type ToolEvent = {
   iteration: number;
-  type: "tool" | "separator";
+  type: "tool" | "separator" | "spinner";
   icon?: string;
   text: string;
   timestamp: number;

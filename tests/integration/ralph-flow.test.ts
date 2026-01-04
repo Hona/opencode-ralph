@@ -200,8 +200,11 @@ describe("ralph flow integration", () => {
     // 2. onEvent (separator) - added at iteration start
     expect(callbackOrder[1]).toBe("onEvent:separator");
 
-    // 3. onTasksUpdated - after parsing plan
-    expect(callbackOrder[2]).toStartWith("onTasksUpdated:");
+    // 3. onEvent (spinner) - added after separator
+    expect(callbackOrder[2]).toBe("onEvent:spinner");
+
+    // 4. onTasksUpdated - after parsing plan
+    expect(callbackOrder[3]).toStartWith("onTasksUpdated:");
 
     // 4. onEvent (tool events) - from the mock stream
     const toolEventIndices = callbackOrder

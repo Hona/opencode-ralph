@@ -257,13 +257,29 @@ async function main() {
         // Debounce event updates to batch rapid events within 50ms window
         // Mutate existing array in-place to avoid allocations
         batchedUpdater.queueUpdate((prev) => {
-          prev.events.push(event);
+          // For tool events, ensure spinner stays at the end of the array
+          if (event.type === "tool") {
+            // Find and remove spinner temporarily
+            const spinnerIndex = prev.events.findIndex((e) => e.type === "spinner");
+            let spinner: typeof event | undefined;
+            if (spinnerIndex !== -1) {
+              spinner = prev.events.splice(spinnerIndex, 1)[0];
+            }
+            // Add the tool event
+            prev.events.push(event);
+            // Re-add spinner at the end
+            if (spinner) {
+              prev.events.push(spinner);
+            }
+          } else {
+            prev.events.push(event);
+          }
           trimEventsInPlace(prev.events);
           return { events: prev.events };
         });
       },
       onIterationComplete: (iteration, duration, commits) => {
-        // Mutate the separator event in-place to avoid array allocation from .map()
+        // Mutate the separator event in-place and remove spinner
         stateSetters.setState((prev) => {
           for (const event of prev.events) {
             if (event.type === "separator" && event.iteration === iteration) {
@@ -271,6 +287,13 @@ async function main() {
               event.commitCount = commits;
               break;
             }
+          }
+          // Remove spinner event for this iteration
+          const spinnerIndex = prev.events.findIndex(
+            (e) => e.type === "spinner" && e.iteration === iteration
+          );
+          if (spinnerIndex !== -1) {
+            prev.events.splice(spinnerIndex, 1);
           }
           // Return same events array reference - mutation is sufficient to trigger re-render
           return { ...prev };

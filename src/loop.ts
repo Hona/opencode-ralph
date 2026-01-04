@@ -108,6 +108,14 @@ export async function runLoop(
         timestamp: iterationStartTime,
       });
 
+      // Add spinner event (will be kept at end of array and removed when iteration completes)
+      callbacks.onEvent({
+        iteration,
+        type: "spinner",
+        text: "looping...",
+        timestamp: iterationStartTime,
+      });
+
       // Parse plan and update task counts (10.12)
       log("loop", "Parsing plan file");
       const { done, total } = await parsePlan(options.planFile);
