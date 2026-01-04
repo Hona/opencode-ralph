@@ -182,7 +182,7 @@ Comprehensive test suite for the Ralph TUI harness using Bun's built-in test run
 
 ## Phase 7: Unit Tests - Loop Logic (`src/loop.ts`)
 
-- [ ] **7.1** Test `buildPrompt()` template substitution:
+- [x] **7.1** Test `buildPrompt()` template substitution:
   - Given `{plan}` in template
   - Should replace with `options.planFile`
   - Multiple `{plan}` occurrences should all be replaced
