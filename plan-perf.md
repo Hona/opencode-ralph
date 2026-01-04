@@ -21,7 +21,7 @@ Fix TUI freezing caused by memory leak and excessive CPU usage.
 ## Phase 2: Reduce Render Frequency
 
 - [x] Lower `targetFps` from 30 to 15 in `src/app.tsx` render options
-- [ ] Increase spinner interval from 80ms to 120ms in `src/components/log.tsx`
+- [x] Increase spinner interval from 80ms to 120ms in `src/components/log.tsx`
 - [ ] Increase elapsed time update interval from 1000ms to 2000ms in `src/app.tsx`
 - [ ] Verify spinner still appears smooth at 120ms interval
 

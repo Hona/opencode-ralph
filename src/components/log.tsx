@@ -1,7 +1,10 @@
-import { For, Show } from "solid-js";
+import { For, Show, createSignal, onCleanup, onMount } from "solid-js";
 import { colors, TOOL_ICONS } from "./colors";
 import { formatDuration } from "../util/time";
 import type { ToolEvent } from "../state";
+
+// Braille spinner frames for smooth animation
+const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
 /**
  * Default icon when tool type is unknown
@@ -39,7 +42,30 @@ function getToolColor(icon: string | undefined): string {
 
 export type LogProps = {
   events: ToolEvent[];
+  isRunning: boolean;
 };
+
+/**
+ * Animated spinner component using braille characters
+ */
+function Spinner() {
+  const [frame, setFrame] = createSignal(0);
+
+  onMount(() => {
+    const interval = setInterval(() => {
+      setFrame((f) => (f + 1) % SPINNER_FRAMES.length);
+    }, 120);
+
+    onCleanup(() => clearInterval(interval));
+  });
+
+  return (
+    <box width="100%" flexDirection="row" paddingTop={1}>
+      <text fg={colors.cyan}>{SPINNER_FRAMES[frame()]}</text>
+      <text fg={colors.fgMuted}> looping...</text>
+    </box>
+  );
+}
 
 /**
  * Renders an iteration separator line.
@@ -89,6 +115,16 @@ function ToolEventItem(props: { event: ToolEvent }) {
  * Uses stickyScroll to keep the view at the bottom as new events arrive.
  */
 export function Log(props: LogProps) {
+  // Create a derived list that includes a spinner placeholder at the end when running
+  const itemsWithSpinner = () => {
+    const items: Array<{ type: "event"; event: ToolEvent } | { type: "spinner" }> = 
+      props.events.map(event => ({ type: "event" as const, event }));
+    if (props.isRunning) {
+      items.push({ type: "spinner" as const });
+    }
+    return items;
+  };
+
   return (
     <scrollbox
       flexGrow={1}
@@ -107,13 +143,20 @@ export function Log(props: LogProps) {
         },
       }}
     >
-      <For each={props.events}>
-        {(event) => (
+      <For each={itemsWithSpinner()}>
+        {(item) => (
           <Show
-            when={event.type === "separator"}
-            fallback={<ToolEventItem event={event} />}
+            when={item.type === "spinner"}
+            fallback={
+              <Show
+                when={(item as { type: "event"; event: ToolEvent }).event.type === "separator"}
+                fallback={<ToolEventItem event={(item as { type: "event"; event: ToolEvent }).event} />}
+              >
+                <SeparatorEvent event={(item as { type: "event"; event: ToolEvent }).event} />
+              </Show>
+            }
           >
-            <SeparatorEvent event={event} />
+            <Spinner />
           </Show>
         )}
       </For>
