@@ -195,16 +195,16 @@ Comprehensive test suite for the Ralph TUI harness using Bun's built-in test run
   - Given no `options.prompt`
   - Should use `DEFAULT_PROMPT`
 
-- [ ] **7.4** Test `parseModel()` with valid format:
+- [x] **7.4** Test `parseModel()` with valid format:
   - `parseModel("anthropic/claude-opus-4")` should return `{ providerID: "anthropic", modelID: "claude-opus-4" }`
 
-- [ ] **7.5** Test `parseModel()` with opencode provider:
+- [x] **7.5** Test `parseModel()` with opencode provider:
   - `parseModel("opencode/claude-opus-4-5")` should return `{ providerID: "opencode", modelID: "claude-opus-4-5" }`
 
-- [ ] **7.6** Test `parseModel()` with invalid format:
+- [x] **7.6** Test `parseModel()` with invalid format:
   - `parseModel("invalid-no-slash")` should throw with descriptive error
 
-- [ ] **7.7** Test `parseModel()` with multiple slashes:
+- [x] **7.7** Test `parseModel()` with multiple slashes:
   - `parseModel("provider/model/version")` should return `{ providerID: "provider", modelID: "model/version" }`
 
 ---

@@ -94,5 +94,61 @@ describe("buildPrompt", () => {
 });
 
 describe("parseModel", () => {
-  it.todo("should be implemented", () => {});
+  describe("valid format", () => {
+    it("should parse anthropic/claude-opus-4 correctly", () => {
+      const result = parseModel("anthropic/claude-opus-4");
+      expect(result).toEqual({
+        providerID: "anthropic",
+        modelID: "claude-opus-4",
+      });
+    });
+
+    it("should parse opencode/claude-opus-4-5 correctly", () => {
+      const result = parseModel("opencode/claude-opus-4-5");
+      expect(result).toEqual({
+        providerID: "opencode",
+        modelID: "claude-opus-4-5",
+      });
+    });
+
+    it("should parse openai/gpt-4 correctly", () => {
+      const result = parseModel("openai/gpt-4");
+      expect(result).toEqual({
+        providerID: "openai",
+        modelID: "gpt-4",
+      });
+    });
+  });
+
+  describe("invalid format", () => {
+    it("should throw error for model without slash", () => {
+      expect(() => parseModel("invalid-no-slash")).toThrow(
+        'Invalid model format: "invalid-no-slash". Expected "provider/model" (e.g., "anthropic/claude-opus-4")'
+      );
+    });
+
+    it("should throw error for empty string", () => {
+      expect(() => parseModel("")).toThrow(
+        'Invalid model format: "". Expected "provider/model" (e.g., "anthropic/claude-opus-4")'
+      );
+    });
+  });
+
+  describe("multiple slashes", () => {
+    it("should handle provider/model/version format", () => {
+      const result = parseModel("provider/model/version");
+      expect(result).toEqual({
+        providerID: "provider",
+        modelID: "model/version",
+      });
+    });
+
+    it("should handle deeply nested model paths", () => {
+      const result = parseModel("aws/bedrock/claude-3-sonnet");
+      expect(result).toEqual({
+        providerID: "aws",
+        modelID: "bedrock/claude-3-sonnet",
+      });
+    });
+  });
 });
