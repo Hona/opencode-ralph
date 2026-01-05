@@ -197,9 +197,15 @@ The fallback stdin handler in `src/index.ts` may conflict with OpenTUI's keyboar
      - Redundancy since `useKeyboard` in `src/app.tsx` already handles "q" and Ctrl+C
   4. **Recommendation: Remove Ralph's stdin handler** - OpenTUI expects exclusive control over stdin. The `useKeyboard` hook provides the proper quit functionality through OpenTUI's official API.
 
-- [ ] **4.2** Remove the fallback stdin handler:
+- [x] **4.2** Remove the fallback stdin handler:
   - Delete the `process.stdin.on("data")` block in `src/index.ts`
   - The keyboard handling should be done entirely through OpenTUI's `useKeyboard`
+  
+  **Completed (2025-01-05):**
+  - Removed the `process.stdin.on("data")` handler block from `src/index.ts`
+  - Added explanatory comment noting why this handler was removed
+  - OpenTUI now has exclusive control over stdin for keyboard handling
+  - The `useKeyboard` hook in `src/app.tsx` handles 'q' and Ctrl+C quit actions
 
 - [ ] **4.3** If fallback is needed, make it conditional:
   - Only add stdin handler if OpenTUI keyboard handling fails

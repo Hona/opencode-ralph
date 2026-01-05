@@ -257,18 +257,11 @@ async function main() {
       process.exit(0);
     }
 
-    if (process.stdin.isTTY) {
-      process.stdin.on("data", (data) => {
-        // Log raw stdin bytes; helps debug Windows key handling
-        const text = data.toString("utf8");
-        log("main", "stdin", { length: data.length, text: JSON.stringify(text) });
-
-        const trimmed = text.replace(/\r|\n/g, "");
-        if (trimmed.toLowerCase() === "q") {
-          requestQuit("stdin", { text: trimmed });
-        }
-      });
-    }
+    // Note: We do NOT set up a process.stdin.on("data") handler here.
+    // OpenTUI expects exclusive control over stdin for keyboard handling.
+    // The useKeyboard hook in src/app.tsx handles 'q' to quit and Ctrl+C.
+    // Adding a second stdin listener causes conflicts with OpenTUI's StdinBuffer
+    // and can lead to double-processing of keys. (See task 4.1 findings in plan.md)
 
     // Handle SIGINT (Ctrl+C) and SIGTERM signals for graceful shutdown
     process.on("SIGINT", async () => {
