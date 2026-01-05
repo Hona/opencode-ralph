@@ -330,10 +330,16 @@ Ensure clean shutdown when 'q' is pressed.
   - Code at lines 315 and 325 in `src/app.tsx` calls `renderer.destroy()` directly
   - TypeScript compiles successfully, confirming the method exists on the renderer type
 
-- [ ] **6.3** Add logging to quit flow:
+- [x] **6.3** Add logging to quit flow:
   - Log when quit key is detected
   - Log when `onQuit` callback is called
   - Log when `exitPromise` resolves
+  
+  **Completed (2025-01-05):**
+  - Quit key detection: `log("app", "Quit via 'q' key")` at app.tsx:312 and `log("app", "Quit via Ctrl+C")` at app.tsx:322
+  - onQuit callback: `log("app", "onQuit called")` at app.tsx:77 and `log("main", "onQuit callback triggered")` at index.ts:355
+  - exitPromise resolve: `log("main", "Exit received, cleaning up")` at index.ts:504
+  - Full quit flow logging chain: quit key → onQuit → exitResolve → exitPromise resolves → finally block
 
 - [ ] **6.4** Test quit flow end-to-end:
   - Start ralph
