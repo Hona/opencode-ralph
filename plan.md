@@ -450,10 +450,16 @@ Remove debugging code and document findings.
   - Kept essential logs: quit actions, onQuit callback
   - TypeScript compiles successfully
 
-- [ ] **8.2** Update AGENTS.md with findings:
+- [x] **8.2** Update AGENTS.md with findings:
   - Document OpenTUI configuration requirements
   - Document keyboard handling approach
   - Note any Windows-specific considerations
+  
+  **Completed (2026-01-05):**
+  - Added "OpenTUI Configuration" section with render options and `disableStdoutInterception()` pattern
+  - Added "Keyboard Handling" section documenting the `onMount` lifecycle issue and fallback stdin workaround
+  - Added "Windows-Specific Considerations" section with keepalive, requestRender, TTY checks, and terminal title reset
+  - All findings from Phases 1-7 are now documented for future reference
 
 - [ ] **8.3** Update README if needed:
   - Installation instructions
