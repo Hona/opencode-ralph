@@ -23,10 +23,10 @@ The `bin/ralph.ts` file spawns a child process which creates stdin/stdout inheri
   - Import and call the main entry point directly
   - Example pattern from opencode: direct invocation without subprocess
 
-- [ ] **1.3** Handle the `@opentui/solid/preload` requirement:
-  - Option A: Add preload to `bunfig.toml` at package root (already exists)
-  - Option B: Use dynamic import after preload is loaded
-  - Verify preload is being applied correctly
+- [x] **1.3** Handle the `@opentui/solid/preload` requirement:
+  - Option A: Add preload to `bunfig.toml` at package root (already exists) ✓
+  - Option B: Use dynamic import after preload is loaded (not needed)
+  - Verified: preload is applied correctly - TUI renders and Solid JSX works
 
 - [ ] **1.4** Preserve `RALPH_USER_CWD` behavior:
   - The cwd handling in `src/index.ts` should still work
