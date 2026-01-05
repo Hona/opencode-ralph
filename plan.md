@@ -122,9 +122,19 @@ The `useKeyboard` hook relies on `onMount` which may not be firing.
   
   **Key finding from research:** `useKeyboard` in `@opentui/solid` registers the callback inside `onMount`, NOT immediately during component body execution. This means if `onMount` doesn't fire, keyboard events won't work. The added `onMount` log will help diagnose this.
 
-- [ ] **3.2** Check if keyboard events are reaching the renderer:
+- [x] **3.2** Check if keyboard events are reaching the renderer:
   - Add logging to verify `renderer.keyInput` exists
   - Add a direct listener to `renderer.keyInput.on("keypress", ...)` for debugging
+  
+  **Completed (2025-01-05):**
+  - Added `keyInput` existence check that logs: `exists`, `type`, `hasOnMethod`
+  - Added direct debug listener to `renderer.keyInput.on("keypress", ...)` that logs:
+    - `name`: the key name
+    - `sequence`: the escape sequence
+    - `eventType`: press/release
+  - This bypasses the `useKeyboard` hook entirely to verify if events reach the renderer at all
+  - The debug listener is added during component body execution (not onMount), so it works regardless of lifecycle timing
+  - If this listener fires but `useKeyboard` doesn't, it proves `onMount` is the issue
 
 - [ ] **3.3** Add `useKittyKeyboard` option to render config:
   - OpenCode uses `useKittyKeyboard: {}` in their render options

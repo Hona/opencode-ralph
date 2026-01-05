@@ -122,6 +122,30 @@ export function App(props: AppProps) {
     } catch (e) {
       log("app", "renderer", { error: String(e) });
     }
+    
+    // Task 3.2: Verify renderer.keyInput exists and add direct listener for debugging
+    const keyInput = (renderer as any).keyInput;
+    log("app", "keyInput check", {
+      exists: !!keyInput,
+      type: typeof keyInput,
+      hasOnMethod: typeof keyInput?.on === "function",
+    });
+    
+    if (keyInput && typeof keyInput.on === "function") {
+      // Add a direct debug listener to renderer.keyInput to verify events are reaching it
+      const debugKeyListener = (e: any) => {
+        log("app", "DIRECT keyInput listener fired", {
+          name: e.name,
+          sequence: e.sequence,
+          eventType: e.eventType,
+        });
+      };
+      keyInput.on("keypress", debugKeyListener);
+      log("app", "Direct debug keypress listener added to renderer.keyInput");
+      
+      // Note: We don't clean this up since it's for debugging and the app lifecycle
+      // handles cleanup on exit. In production, use onCleanup() to remove this.
+    }
   }
   
   // State signal for loop state
