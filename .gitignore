@@ -1,6 +1,9 @@
 node_modules/
+dist/
 .ralph-lock
 .ralph-state.json
 .ralph-pause
 .ralph-done
 .ralph.log
+
+.reference/

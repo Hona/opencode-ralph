@@ -8,11 +8,16 @@ import { cleanupRalphFiles } from "../helpers/temp-files";
 const mockSessionCreate = mock(() =>
   Promise.resolve({ data: { id: "test-session-123" } })
 );
-const mockPromptAsync = mock(() => Promise.resolve());
+const mockSessionPrompt = mock(() => Promise.resolve());
 
 // Mock event stream that simulates a complete iteration
 function createMockEventStream() {
   const events = [
+    // Server connected event - triggers prompt send
+    {
+      type: "server.connected",
+      properties: {},
+    },
     // Tool completion event
     {
       type: "message.part.updated",
@@ -78,7 +83,7 @@ mock.module("@opencode-ai/sdk", () => ({
   createOpencodeClient: mock(() => ({
     session: {
       create: mockSessionCreate,
-      promptAsync: mockPromptAsync,
+      prompt: mockSessionPrompt,
     },
     event: {
       subscribe: mockEventSubscribe,
@@ -149,7 +154,7 @@ describe("ralph flow integration", () => {
 
     // Reset mocks
     mockSessionCreate.mockClear();
-    mockPromptAsync.mockClear();
+    mockSessionPrompt.mockClear();
     mockEventSubscribe.mockClear();
   });
 
@@ -289,7 +294,7 @@ describe("ralph flow integration", () => {
     expect(mockSessionCreate).toHaveBeenCalled();
 
     // Verify prompt was sent (at least once per iteration)
-    expect(mockPromptAsync).toHaveBeenCalled();
+    expect(mockSessionPrompt).toHaveBeenCalled();
 
     // Verify events were subscribed to (at least once per iteration)
     expect(mockEventSubscribe).toHaveBeenCalled();

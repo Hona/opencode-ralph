@@ -6,6 +6,60 @@ import { log } from "./util/log.js";
 
 const DEFAULT_PROMPT = `READ all of {plan}. Pick ONE task. If needed, verify via web/code search (this applies to packages, knowledge, deterministic data - NEVER VERIFY EDIT TOOLS WORKED OR THAT YOU COMMITED SOMETHING. BE PRAGMATIC ABOUT EVERYTHING). Complete task. Commit change (update the plan.md in the same commit). ONLY do one task unless GLARINGLY OBVIOUS steps should run together. Update {plan}. If you learn a critical operational detail, update AGENTS.md. When ALL tasks complete, create .ralph-done and exit. NEVER GIT PUSH. ONLY COMMIT.`;
 
+const DEFAULT_PORT = 4190;
+const DEFAULT_HOSTNAME = "127.0.0.1";
+
+/**
+ * Check if an opencode server is already running at the given URL.
+ * Uses the /global/health endpoint.
+ */
+async function tryConnectToExistingServer(url: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${url}/global/health`, {
+      signal: AbortSignal.timeout(1000),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.healthy === true;
+    }
+  } catch {
+    // Server not running or not responding
+  }
+  return false;
+}
+
+/**
+ * Get or create an opencode server.
+ * First tries to attach to an existing server, then starts a new one if needed.
+ */
+async function getOrCreateOpencodeServer(options: {
+  signal?: AbortSignal;
+  port?: number;
+  hostname?: string;
+}): Promise<{ url: string; close(): void; attached: boolean }> {
+  const hostname = options.hostname || DEFAULT_HOSTNAME;
+  const port = options.port || DEFAULT_PORT;
+  const url = `http://${hostname}:${port}`;
+
+  // Try to attach to existing server first
+  if (await tryConnectToExistingServer(url)) {
+    log("loop", "Attached to existing server", { url });
+    return {
+      url,
+      close: () => {}, // No-op - we didn't start it
+      attached: true,
+    };
+  }
+
+  // Start new server
+  log("loop", "Starting new server...");
+  const server = await createOpencodeServer(options);
+  return {
+    ...server,
+    attached: false,
+  };
+}
+
 export function buildPrompt(options: LoopOptions): string {
   const template = options.prompt || DEFAULT_PROMPT;
   return template.replace(/\{plan\}/g, options.planFile);
@@ -50,15 +104,23 @@ export async function runLoop(
 ): Promise<void> {
   log("loop", "runLoop started", { planFile: options.planFile, model: options.model });
   
-  let server: { url: string; close(): void } | null = null;
+  let server: { url: string; close(): void; attached: boolean } | null = null;
+
+  function createTimeoutlessFetch() {
+    return (req: any) => {
+      // @ts-ignore - Bun Request supports .timeout
+      req.timeout = false;
+      return fetch(req);
+    };
+  }
 
   try {
-    // Start opencode server
+    // Get or create opencode server (attach if already running)
     log("loop", "Creating opencode server...");
-    server = await createOpencodeServer({ signal, port: 4190 });
-    log("loop", "Server created", { url: server.url });
+    server = await getOrCreateOpencodeServer({ signal, port: DEFAULT_PORT });
+    log("loop", "Server ready", { url: server.url, attached: server.attached });
     
-    const client = createOpencodeClient({ baseUrl: server.url });
+    const client = createOpencodeClient({ baseUrl: server.url, fetch: createTimeoutlessFetch() } as any);
     log("loop", "Client created");
 
     // Initialize iteration counter from persisted state

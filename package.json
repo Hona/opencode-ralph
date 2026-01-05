@@ -3,19 +3,21 @@
   "version": "0.0.1",
   "type": "module",
   "bin": {
-    "ralph": "./bin/ralph"
+    "ralph": "./bin/ralph.ts"
   },
   "scripts": {
-    "dev": "bun run src/index.ts",
+    "dev": "bun run --conditions=browser src/index.ts",
+    "build": "bun run scripts/build.ts",
+    "postbuild": "bun run scripts/install.ts",
     "typecheck": "bun x tsc --noEmit",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage"
   },
   "dependencies": {
-    "@opencode-ai/sdk": "latest",
-    "@opentui/core": "0.1.67",
-    "@opentui/solid": "0.1.67",
+    "@opencode-ai/sdk": "1.1.1",
+    "@opentui/core": "0.1.68",
+    "@opentui/solid": "0.1.68",
     "solid-js": "^1.9.0",
     "yargs": "^18.0.0"
   },

@@ -1,10 +1,11 @@
 import { render, useKeyboard, useRenderer } from "@opentui/solid";
-import { createSignal, onCleanup, onMount, Setter } from "solid-js";
+import type { KeyEvent } from "@opentui/core";
+import { createSignal, onCleanup, Setter } from "solid-js";
 import { Header } from "./components/header";
 import { Log } from "./components/log";
 import { Footer } from "./components/footer";
 import { PausedOverlay } from "./components/paused";
-import type { LoopState, LoopOptions, PersistedState, ToolEvent } from "./state";
+import type { LoopState, LoopOptions, PersistedState } from "./state";
 import { colors } from "./components/colors";
 import { calculateEta } from "./util/time";
 import { log } from "./util/log";
@@ -14,6 +15,7 @@ type AppProps = {
   persistedState: PersistedState;
   onQuit: () => void;
   iterationTimesRef?: number[];
+  onKeyboardEvent?: () => void; // Called when first keyboard event is received
 };
 
 /**
@@ -36,13 +38,22 @@ export type StartAppResult = {
 let globalSetState: Setter<LoopState> | null = null;
 let globalUpdateIterationTimes: ((times: number[]) => void) | null = null;
 
-// Mount synchronization - resolves when App component mounts
-let mountResolve: (() => void) | null = null;
+
 
 /**
  * Main App component with state signals.
  * Manages LoopState and elapsed time, rendering the full TUI layout.
  */
+/**
+ * Props for starting the app, including optional keyboard detection callback.
+ */
+export type StartAppProps = {
+  options: LoopOptions;
+  persistedState: PersistedState;
+  onQuit: () => void;
+  onKeyboardEvent?: () => void; // Called once when first keyboard event is received
+};
+
 /**
  * Starts the TUI application and returns a promise that resolves when the app exits,
  * along with state setters for external updates.
@@ -50,16 +61,9 @@ let mountResolve: (() => void) | null = null;
  * @param props - The application props including options, persisted state, and quit handler
  * @returns Promise<StartAppResult> with exitPromise and stateSetters
  */
-export async function startApp(props: AppProps): Promise<StartAppResult> {
-  log("app", "startApp called");
-  
+export async function startApp(props: StartAppProps): Promise<StartAppResult> {
   // Create a mutable reference to iteration times that can be updated externally
   let iterationTimesRef = [...props.persistedState.iterationTimes];
-  
-  // Create mount promise to wait for component initialization
-  const mountPromise = new Promise<void>((resolve) => {
-    mountResolve = resolve;
-  });
   
   // Create exit promise with resolver
   let exitResolve!: () => void;
@@ -68,44 +72,44 @@ export async function startApp(props: AppProps): Promise<StartAppResult> {
   });
   
   const onQuit = () => {
-    log("app", "onQuit called");
+    log("app", "onQuit callback invoked");
     props.onQuit();
     exitResolve();
   };
 
-  log("app", "Calling render()");
-  
   // Await render to ensure CLI renderer is fully initialized
   await render(
-    () => <App {...props} onQuit={onQuit} iterationTimesRef={iterationTimesRef} />,
+    () => (
+      <App
+        options={props.options}
+        persistedState={props.persistedState}
+        onQuit={onQuit}
+        iterationTimesRef={iterationTimesRef}
+        onKeyboardEvent={props.onKeyboardEvent}
+      />
+    ),
     {
-      targetFps: 15, // Reduced from 30 to lower CPU usage
+      targetFps: 30, // Balanced FPS: OpenCode uses 60, but 30 is sufficient for ralph's logging TUI
+      gatherStats: false, // Disable stats gathering for performance (matches OpenCode)
       exitOnCtrlC: false,
+      useKittyKeyboard: {}, // Enable Kitty keyboard protocol for improved key event handling
     }
   );
-  
-  log("app", "render() completed, waiting for component mount");
-  
-  // Wait for component to mount so globalSetState is available
-  await mountPromise;
-  
-  log("app", "Component mounted, state setters ready");
 
-  // Return state setters that will be available after render
+  // State setters are set during App component body execution, so they're
+  // available immediately after render() completes.
+  if (!globalSetState || !globalUpdateIterationTimes) {
+    throw new Error(
+      "State setters not initialized after render. This indicates the App component did not execute."
+    );
+  }
+
   const stateSetters: AppStateSetters = {
-    setState: (update) => {
-      if (globalSetState) {
-        return globalSetState(update);
-      }
-      log("app", "WARNING: setState called but globalSetState is null");
-      return {} as LoopState;
-    },
+    setState: globalSetState,
     updateIterationTimes: (times) => {
       iterationTimesRef.length = 0;
       iterationTimesRef.push(...times);
-      if (globalUpdateIterationTimes) {
-        globalUpdateIterationTimes(times);
-      }
+      globalUpdateIterationTimes!(times);
     },
   };
 
@@ -115,6 +119,10 @@ export async function startApp(props: AppProps): Promise<StartAppResult> {
 export function App(props: AppProps) {
   // Get renderer for cleanup on quit
   const renderer = useRenderer();
+  
+  // Disable stdout interception to prevent OpenTUI from capturing stdout
+  // which may interfere with logging and other output (matches OpenCode pattern).
+  renderer.disableStdoutInterception();
   
   // State signal for loop state
   // Initialize iteration to length + 1 since we're about to start the next iteration
@@ -135,18 +143,14 @@ export function App(props: AppProps) {
     props.iterationTimesRef || [...props.persistedState.iterationTimes]
   );
 
-  // Export the state setter to module scope for external access
-  globalSetState = setState;
+  // Export wrapped state setter for external access. Calls requestRender()
+  // after updates to ensure TUI refreshes on all platforms.
+  globalSetState = (update) => {
+    const result = setState(update);
+    renderer.requestRender?.();
+    return result;
+  };
   globalUpdateIterationTimes = (times: number[]) => setIterationTimes(times);
-  
-  // Signal that component is mounted and state setters are ready
-  onMount(() => {
-    log("app", "App component mounted");
-    if (mountResolve) {
-      mountResolve();
-      mountResolve = null; // Clean up
-    }
-  });
 
   // Track elapsed time from the persisted start time
   const [elapsed, setElapsed] = createSignal(
@@ -196,28 +200,39 @@ export function App(props: AppProps) {
     }
   };
 
+  // Track if we've notified about keyboard events working (only notify once)
+  let keyboardEventNotified = false;
+
   // Keyboard handling
-  useKeyboard((e) => {
-    log("app", "Keyboard event", { name: e.name, ctrl: e.ctrl, meta: e.meta });
+  useKeyboard((e: KeyEvent) => {
+    // Notify caller that OpenTUI keyboard handling is working
+    // This allows the caller to skip setting up a fallback stdin handler
+    if (!keyboardEventNotified && props.onKeyboardEvent) {
+      keyboardEventNotified = true;
+      props.onKeyboardEvent();
+    }
     
+    const key = e.name.toLowerCase();
+
     // p key: toggle pause
-    if (e.name === "p" && !e.ctrl && !e.meta) {
-      log("app", "Toggle pause");
+    if (key === "p" && !e.ctrl && !e.meta) {
       togglePause();
       return;
     }
 
     // q key: quit
-    if (e.name === "q" && !e.ctrl && !e.meta) {
-      log("app", "Quit via 'q' key");
+    if (key === "q" && !e.ctrl && !e.meta) {
+      log("app", "Quit requested via 'q' key");
+      renderer.setTerminalTitle("");
       renderer.destroy();
       props.onQuit();
       return;
     }
 
     // Ctrl+C: quit
-    if (e.name === "c" && e.ctrl) {
-      log("app", "Quit via Ctrl+C");
+    if (key === "c" && e.ctrl) {
+      log("app", "Quit requested via Ctrl+C");
+      renderer.setTerminalTitle("");
       renderer.destroy();
       props.onQuit();
       return;
