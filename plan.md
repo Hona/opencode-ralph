@@ -434,10 +434,21 @@ Verify all fixes work together.
 
 Remove debugging code and document findings.
 
-- [ ] **8.1** Remove excessive logging:
+- [x] **8.1** Remove excessive logging:
   - Keep essential logs for troubleshooting
   - Remove verbose debug logs added during fix
   - Consider log levels (debug vs info)
+  
+  **Completed (2026-01-05):**
+  - Removed debug logging from `src/app.tsx`:
+    - Removed renderer info dump and keyInput debug listener
+    - Removed `createEffect` that logged every state change
+    - Removed `onMount` verification log
+    - Removed verbose `useKeyboard` callback logging (kept only quit action logs)
+    - Removed unused imports: `createEffect`, `onMount`, `ToolEvent`
+  - Simplified verbose comments throughout `src/app.tsx`
+  - Kept essential logs: quit actions, onQuit callback
+  - TypeScript compiles successfully
 
 - [ ] **8.2** Update AGENTS.md with findings:
   - Document OpenTUI configuration requirements

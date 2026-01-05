@@ -62,8 +62,6 @@ export type StartAppProps = {
  * @returns Promise<StartAppResult> with exitPromise and stateSetters
  */
 export async function startApp(props: StartAppProps): Promise<StartAppResult> {
-  log("app", "startApp called");
-  
   // Create a mutable reference to iteration times that can be updated externally
   let iterationTimesRef = [...props.persistedState.iterationTimes];
   
@@ -74,13 +72,11 @@ export async function startApp(props: StartAppProps): Promise<StartAppResult> {
   });
   
   const onQuit = () => {
-    log("app", "onQuit called");
+    log("app", "onQuit callback invoked");
     props.onQuit();
     exitResolve();
   };
 
-log("app", "Calling render()");
-  
   // Await render to ensure CLI renderer is fully initialized
   await render(
     () => (
@@ -99,16 +95,9 @@ log("app", "Calling render()");
       useKittyKeyboard: {}, // Enable Kitty keyboard protocol for improved key event handling
     }
   );
-  
-  log("app", "render() completed, state setters ready");
 
-  // State setters are available immediately after render() completes.
-  // The App component's function body runs during render, which sets up
-  // globalSetState and globalUpdateIterationTimes. This follows the OpenCode
-  // pattern: trust Solid's reactive system - no mount timing dependencies.
-  //
-  // Note: globalSetState is set in the App component body (not onMount),
-  // so it's guaranteed to be available once render() resolves.
+  // State setters are set during App component body execution, so they're
+  // available immediately after render() completes.
   if (!globalSetState || !globalUpdateIterationTimes) {
     throw new Error(
       "State setters not initialized after render. This indicates the App component did not execute."
@@ -154,11 +143,8 @@ export function App(props: AppProps) {
     props.iterationTimesRef || [...props.persistedState.iterationTimes]
   );
 
-  // Export the state setter to module scope for external access.
-  // We wrap setState to call requestRender() after updates - this helps ensure
-  // the TUI refreshes on Windows where automatic redraw can sometimes stall.
-  // Note: OpenCode only uses requestRender() sparingly for specific edge cases,
-  // but we keep it here as a defensive measure for cross-platform reliability.
+  // Export wrapped state setter for external access. Calls requestRender()
+  // after updates to ensure TUI refreshes on all platforms.
   globalSetState = (update) => {
     const result = setState(update);
     renderer.requestRender?.();
