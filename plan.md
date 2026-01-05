@@ -243,12 +243,41 @@ The fallback stdin handler in `src/index.ts` may conflict with OpenTUI's keyboar
 
 Match opencode's render configuration for consistency.
 
-- [ ] **5.1** Review opencode's full render options:
+- [x] **5.1** Review opencode's full render options:
   - `targetFps: 60` (ralph uses 15)
   - `gatherStats: false`
   - `exitOnCtrlC: false`
   - `useKittyKeyboard: {}`
   - `consoleOptions` with keybindings
+  
+  **Findings (2025-01-05):**
+  OpenCode's render options in `.reference/opencode/packages/opencode/src/cli/cmd/tui/app.tsx` (lines 148-161):
+  ```typescript
+  {
+    targetFps: 60,           // High FPS for smooth UI
+    gatherStats: false,      // Disable stats gathering for performance
+    exitOnCtrlC: false,      // Manual Ctrl+C handling via useKeyboard
+    useKittyKeyboard: {},    // Enable Kitty keyboard protocol
+    consoleOptions: {        // Console copy-selection support
+      keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
+      onCopySelection: (text) => { Clipboard.copy(text).catch(...) },
+    },
+  }
+  ```
+  
+  **Ralph's current options** in `src/app.tsx` (lines 95-99):
+  ```typescript
+  {
+    targetFps: 15,           // Deliberately low for CPU efficiency
+    exitOnCtrlC: false,      // Already correct
+    useKittyKeyboard: {},    // Already added in Phase 3
+  }
+  ```
+  
+  **Key differences:**
+  1. **targetFps**: OpenCode uses 60, Ralph uses 15 for lower CPU usage (intentional choice)
+  2. **gatherStats**: OpenCode explicitly sets `false`, Ralph doesn't set it (defaults to false)
+  3. **consoleOptions**: OpenCode has clipboard keybindings for Ctrl+Y copy-selection; Ralph doesn't need this for its simple logging TUI
 
 - [ ] **5.2** Update ralph's render options:
   - Increase `targetFps` to 30 or 60 (test performance impact)
