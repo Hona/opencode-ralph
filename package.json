@@ -13,9 +13,9 @@
     "test:coverage": "bun test --coverage"
   },
   "dependencies": {
-    "@opencode-ai/sdk": "latest",
-    "@opentui/core": "0.1.67",
-    "@opentui/solid": "0.1.67",
+    "@opencode-ai/sdk": "1.1.1",
+    "@opentui/core": "0.1.68",
+    "@opentui/solid": "0.1.68",
     "solid-js": "^1.9.0",
     "yargs": "^18.0.0"
   },
