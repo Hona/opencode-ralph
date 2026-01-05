@@ -466,10 +466,17 @@ Remove debugging code and document findings.
   - Known issues
   - Terminal compatibility
 
-- [ ] **8.4** Clean up commented code:
+- [x] **8.4** Clean up commented code:
   - Remove backup code blocks
   - Remove TODO comments that are resolved
   - Ensure code is production-ready
+  
+  **Completed (2026-01-05):**
+  - Searched entire codebase for TODO, FIXME, HACK, XXX, BACKUP, ORIGINAL patterns - none found
+  - Reviewed all source files for commented-out code - none found
+  - Removed trailing blank lines from `src/components/header.tsx`
+  - Verified TypeScript compiles successfully
+  - Note: "Task 4.3:" comments in `src/index.ts` retained as useful documentation explaining why the fallback stdin pattern was implemented
 
 ---
 
