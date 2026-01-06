@@ -29,7 +29,7 @@ const projectRoot = path.resolve(__dirname, "..");
 process.chdir(projectRoot);
 
 const pkg = await Bun.file("./package.json").json();
-const PACKAGE_NAME = "ralph-cli";
+const PACKAGE_NAME = "@hona/ralph-cli";
 
 // Determine channel and version
 const env = {
@@ -104,9 +104,10 @@ const { binaries } = await import("./build.ts");
 
 // Smoke test current platform binary
 const platformName = process.platform === "win32" ? "windows" : process.platform;
-const currentPlatformPkg = `ralph-cli-${platformName}-${process.arch}`;
+const currentPlatformPkg = `@hona/ralph-cli-${platformName}-${process.arch}`;
+const currentPlatformDir = currentPlatformPkg.replace("@", "").replace("/", "-");
 const binaryName = process.platform === "win32" ? "ralph.exe" : "ralph";
-const binaryPath = `./dist/${currentPlatformPkg}/bin/${binaryName}`;
+const binaryPath = `./dist/${currentPlatformDir}/bin/${binaryName}`;
 
 if (fs.existsSync(binaryPath)) {
   console.log(`\n=== Smoke test: ${currentPlatformPkg} ===`);
@@ -123,14 +124,15 @@ if (fs.existsSync(binaryPath)) {
 }
 
 // Create main wrapper package
+const mainPkgDirName = PACKAGE_NAME.replace("@", "").replace("/", "-");
 console.log("=== Creating main package ===\n");
-await $`mkdir -p ./dist/${PACKAGE_NAME}/bin`;
+await $`mkdir -p ./dist/${mainPkgDirName}/bin`;
 
 // Copy JS launcher
-await $`cp ./bin/ralph ./dist/${PACKAGE_NAME}/bin/ralph`;
+await $`cp ./bin/ralph ./dist/${mainPkgDirName}/bin/ralph`;
 
 // Copy postinstall script
-await $`cp ./scripts/postinstall.mjs ./dist/${PACKAGE_NAME}/postinstall.mjs`;
+await $`cp ./scripts/postinstall.mjs ./dist/${mainPkgDirName}/postinstall.mjs`;
 
 // Generate main package.json with optionalDependencies
 const mainPackageJson = {
@@ -152,17 +154,18 @@ const mainPackageJson = {
   license: "MIT",
 };
 
-await Bun.file(`./dist/${PACKAGE_NAME}/package.json`).write(
+await Bun.file(`./dist/${mainPkgDirName}/package.json`).write(
   JSON.stringify(mainPackageJson, null, 2)
 );
 
-console.log(`Created dist/${PACKAGE_NAME}/package.json`);
+console.log(`Created dist/${mainPkgDirName}/package.json`);
 console.log(`  optionalDependencies: ${Object.keys(binaries).join(", ")}\n`);
 
 // Publish platform packages
 console.log("=== Publishing platform packages ===\n");
 for (const [name] of Object.entries(binaries)) {
-  const pkgDir = `./dist/${name}`;
+  const dirName = name.replace("@", "").replace("/", "-");
+  const pkgDir = `./dist/${dirName}`;
 
   // Set executable permissions on Unix
   if (process.platform !== "win32") {
@@ -177,7 +180,7 @@ for (const [name] of Object.entries(binaries)) {
 
 // Publish main package
 console.log("=== Publishing main package ===\n");
-const mainPkgDir = `./dist/${PACKAGE_NAME}`;
+const mainPkgDir = `./dist/${mainPkgDirName}`;
 await $`bun pm pack`.cwd(mainPkgDir);
 await $`npm publish *.tgz --access public --tag ${tag}`.cwd(mainPkgDir);
 console.log(`Published ${PACKAGE_NAME}@${version}\n`);

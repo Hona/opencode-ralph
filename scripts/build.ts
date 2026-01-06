@@ -71,16 +71,18 @@ if (!singleFlag && !skipInstall) {
 const binaries: Record<string, string> = {};
 
 for (const target of targets) {
-  // Package name follows npm convention: ralph-opencode-{platform}-{arch}
+  // Package name follows npm convention: @hona/ralph-cli-{platform}-{arch}
   // Note: win32 becomes "windows" in package name to avoid npm issues
   const platformName = target.os === "win32" ? "windows" : target.os;
-  const packageName = `ralph-cli-${platformName}-${target.arch}`;
+  const packageName = `@hona/ralph-cli-${platformName}-${target.arch}`;
+  // Directory name replaces @ and / for filesystem compatibility
+  const dirName = packageName.replace("@", "").replace("/", "-");
   const binaryName = target.os === "win32" ? "ralph.exe" : "ralph";
 
   console.log(`Building ${packageName}...`);
 
   // Create output directory
-  await $`mkdir -p dist/${packageName}/bin`;
+  await $`mkdir -p dist/${dirName}/bin`;
 
   // Build the executable
   const result = await Bun.build({
@@ -91,7 +93,7 @@ for (const target of targets) {
     sourcemap: "external",
     compile: {
       target: target.bunTarget as any,
-      outfile: `dist/${packageName}/bin/${binaryName}`,
+      outfile: `dist/${dirName}/bin/${binaryName}`,
       autoloadBunfig: false,
       // @ts-expect-error - These options exist at runtime but aren't in types yet
       autoloadTsconfig: false,
@@ -111,7 +113,7 @@ for (const target of targets) {
   }
 
   // Generate platform-specific package.json
-  await Bun.file(`dist/${packageName}/package.json`).write(
+  await Bun.file(`dist/${dirName}/package.json`).write(
     JSON.stringify(
       {
         name: packageName,
@@ -126,7 +128,7 @@ for (const target of targets) {
   );
 
   binaries[packageName] = version;
-  console.log(`  Built: dist/${packageName}/bin/${binaryName}`);
+  console.log(`  Built: dist/${dirName}/bin/${binaryName}`);
 }
 
 console.log(`\nBuild complete! Built ${Object.keys(binaries).length} packages.`);

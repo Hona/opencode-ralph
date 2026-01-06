@@ -7,14 +7,23 @@ AI agent loop for autonomous task execution. Reads a plan, picks one task, compl
 ## Quick Start
 
 ```bash
-# Install from source
-git clone https://github.com/ghuntley/opencode-ralph.git
-cd opencode-ralph
-bun install
-bun run build  # compiles and installs to ~/.bun/bin/ralph
+# Install stable release
+bun install -g @hona/ralph-cli
+
+# Or install dev snapshot (latest from dev branch)
+bun install -g @hona/ralph-cli@dev
 
 # Run in any project directory
 ralph
+```
+
+### Install from Source
+
+```bash
+git clone https://github.com/hona/opencode-ralph.git
+cd opencode-ralph
+bun install
+bun run build:single  # compiles for current platform
 ```
 
 ## What is Ralph?

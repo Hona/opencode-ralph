@@ -105,5 +105,5 @@ Options for `bump`:
 
 The workflow will automatically:
 1. Build binaries for all platforms (darwin/linux/windows, arm64/x64)
-2. Publish platform-specific packages (`ralph-cli-{platform}-{arch}`)
-3. Publish the main wrapper package (`ralph-cli`)
+2. Publish platform-specific packages (`@hona/ralph-cli-{platform}-{arch}`)
+3. Publish the main wrapper package (`@hona/ralph-cli`)

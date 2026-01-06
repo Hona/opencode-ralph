@@ -1,5 +1,5 @@
 {
-  "name": "ralph-cli",
+  "name": "@hona/ralph-cli",
   "version": "0.1.0",
   "type": "module",
   "bin": {
