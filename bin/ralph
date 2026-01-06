@@ -71,7 +71,7 @@ if (!arch) {
 }
 
 // Construct package and binary names
-const packageBase = "ralph-opencode-" + platform + "-" + arch;
+const packageBase = "ralph-cli-" + platform + "-" + arch;
 const binaryName = platform === "windows" ? "ralph.exe" : "ralph";
 
 /**

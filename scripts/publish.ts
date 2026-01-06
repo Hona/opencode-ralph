@@ -29,7 +29,7 @@ const projectRoot = path.resolve(__dirname, "..");
 process.chdir(projectRoot);
 
 const pkg = await Bun.file("./package.json").json();
-const PACKAGE_NAME = "ralph-opencode";
+const PACKAGE_NAME = "ralph-cli";
 
 // Determine channel and version
 const env = {
@@ -104,14 +104,15 @@ const { binaries } = await import("./build.ts");
 
 // Smoke test current platform binary
 const platformName = process.platform === "win32" ? "windows" : process.platform;
-const currentPlatformPkg = `ralph-opencode-${platformName}-${process.arch}`;
+const currentPlatformPkg = `ralph-cli-${platformName}-${process.arch}`;
 const binaryName = process.platform === "win32" ? "ralph.exe" : "ralph";
 const binaryPath = `./dist/${currentPlatformPkg}/bin/${binaryName}`;
 
 if (fs.existsSync(binaryPath)) {
   console.log(`\n=== Smoke test: ${currentPlatformPkg} ===`);
   try {
-    await $`${binaryPath} --version`;
+    // Just test that the binary runs (--help should work)
+    await $`${binaryPath} --help`;
     console.log("Smoke test passed!\n");
   } catch (e) {
     console.error("Smoke test failed:", e);

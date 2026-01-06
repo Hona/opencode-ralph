@@ -58,7 +58,7 @@ function detectPlatformAndArch() {
  */
 function findBinary() {
   const { platform, arch } = detectPlatformAndArch();
-  const packageName = `ralph-opencode-${platform}-${arch}`;
+  const packageName = `ralph-cli-${platform}-${arch}`;
   const binaryName = platform === "windows" ? "ralph.exe" : "ralph";
 
   try {

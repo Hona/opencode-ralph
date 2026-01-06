@@ -74,7 +74,7 @@ for (const target of targets) {
   // Package name follows npm convention: ralph-opencode-{platform}-{arch}
   // Note: win32 becomes "windows" in package name to avoid npm issues
   const platformName = target.os === "win32" ? "windows" : target.os;
-  const packageName = `ralph-opencode-${platformName}-${target.arch}`;
+  const packageName = `ralph-cli-${platformName}-${target.arch}`;
   const binaryName = target.os === "win32" ? "ralph.exe" : "ralph";
 
   console.log(`Building ${packageName}...`);
