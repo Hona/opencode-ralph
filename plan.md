@@ -520,7 +520,7 @@
 - [x] Style success variant with green color
 - [x] Style error variant with red color
 - [x] Style info variant with blue color
-- [ ] Add dismiss animation (fade out)
+- [x] Add dismiss animation (fade out)
 
 #### Toast Stack Rendering
 - [x] Create `ToastStack` component

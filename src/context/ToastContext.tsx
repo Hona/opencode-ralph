@@ -31,6 +31,8 @@ export interface ToastOptions {
 export interface Toast extends ToastOptions {
   /** Unique identifier for this toast instance */
   id: string;
+  /** Whether the toast is currently fading out */
+  fading?: boolean;
 }
 
 /**
@@ -79,8 +81,12 @@ export function ToastProvider(props: ToastProviderProps) {
   // Toasts array signal - stores active toast notifications
   const [toasts, setToasts] = createSignal<Toast[]>([]);
   
-  // Map to track timeout IDs for each toast
+  // Map to track timeout IDs for each toast (dismiss and fade)
   const timeouts = new Map<string, ReturnType<typeof setTimeout>>();
+  const fadeTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+  
+  /** Duration for fade out animation in milliseconds */
+  const FADE_DURATION = 300;
 
   /**
    * Clean up all timeouts on unmount.
@@ -88,17 +94,24 @@ export function ToastProvider(props: ToastProviderProps) {
   onCleanup(() => {
     timeouts.forEach((timeout) => clearTimeout(timeout));
     timeouts.clear();
+    fadeTimeouts.forEach((timeout) => clearTimeout(timeout));
+    fadeTimeouts.clear();
   });
 
   /**
-   * Dismiss a toast by ID.
+   * Remove a toast immediately without fade animation.
    */
-  const dismiss = (id: string) => {
-    // Clear the timeout if it exists
+  const removeToast = (id: string) => {
+    // Clear any pending timeouts
     const timeout = timeouts.get(id);
     if (timeout) {
       clearTimeout(timeout);
       timeouts.delete(id);
+    }
+    const fadeTimeout = fadeTimeouts.get(id);
+    if (fadeTimeout) {
+      clearTimeout(fadeTimeout);
+      fadeTimeouts.delete(id);
     }
     
     // Remove from toasts array
@@ -106,12 +119,44 @@ export function ToastProvider(props: ToastProviderProps) {
   };
 
   /**
-   * Clear all toasts.
+   * Dismiss a toast by ID with fade out animation.
+   */
+  const dismiss = (id: string) => {
+    // Clear the auto-dismiss timeout if it exists
+    const timeout = timeouts.get(id);
+    if (timeout) {
+      clearTimeout(timeout);
+      timeouts.delete(id);
+    }
+    
+    // Check if already fading or doesn't exist
+    const toast = toasts().find((t) => t.id === id);
+    if (!toast || toast.fading) {
+      return;
+    }
+    
+    // Mark toast as fading
+    setToasts((prev) => 
+      prev.map((t) => (t.id === id ? { ...t, fading: true } : t))
+    );
+    
+    // After fade duration, remove the toast
+    const fadeTimeout = setTimeout(() => {
+      removeToast(id);
+    }, FADE_DURATION);
+    
+    fadeTimeouts.set(id, fadeTimeout);
+  };
+
+  /**
+   * Clear all toasts immediately.
    */
   const clear = () => {
     // Clear all timeouts
     timeouts.forEach((timeout) => clearTimeout(timeout));
     timeouts.clear();
+    fadeTimeouts.forEach((timeout) => clearTimeout(timeout));
+    fadeTimeouts.clear();
     
     // Clear toasts array
     setToasts([]);
@@ -133,15 +178,20 @@ export function ToastProvider(props: ToastProviderProps) {
 
     // Add toast to array
     setToasts((prev) => {
-      // If we're at max visible, remove the oldest toast
+      // If we're at max visible, remove the oldest toast immediately
       if (prev.length >= maxVisible) {
         const oldest = prev[0];
         if (oldest) {
-          // Clear timeout for the oldest toast
+          // Clear timeouts for the oldest toast
           const oldestTimeout = timeouts.get(oldest.id);
           if (oldestTimeout) {
             clearTimeout(oldestTimeout);
             timeouts.delete(oldest.id);
+          }
+          const oldestFadeTimeout = fadeTimeouts.get(oldest.id);
+          if (oldestFadeTimeout) {
+            clearTimeout(oldestFadeTimeout);
+            fadeTimeouts.delete(oldest.id);
           }
         }
         return [...prev.slice(1), toast];

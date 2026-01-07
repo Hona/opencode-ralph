@@ -41,11 +41,18 @@ function getVariantIcon(variant: ToastVariant): string {
 /**
  * Single toast item component.
  * Displays the icon, message, and applies variant-specific styling.
+ * When fading, uses muted colors to simulate fade-out animation.
  */
 function ToastItem(props: { toast: Toast }) {
   const { theme } = useTheme();
   const t = theme();
-  const variantColor = getVariantColor(props.toast.variant, t);
+  const isFading = () => props.toast.fading ?? false;
+  
+  // Use muted color when fading out
+  const variantColor = isFading() 
+    ? t.textMuted 
+    : getVariantColor(props.toast.variant, t);
+  const textColor = isFading() ? t.textMuted : t.text;
   const icon = getVariantIcon(props.toast.variant);
 
   return (
@@ -59,7 +66,7 @@ function ToastItem(props: { toast: Toast }) {
       backgroundColor={t.backgroundPanel}
     >
       <text fg={variantColor}>{icon}</text>
-      <text fg={t.text}> {props.toast.message}</text>
+      <text fg={textColor}> {props.toast.message}</text>
     </box>
   );
 }
