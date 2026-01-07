@@ -315,12 +315,12 @@
 ### 2.4 Debug/Sandbox Mode (`-d` flag)
 
 #### CLI Flag
-- [ ] Add `--debug` / `-d` flag to yargs in `src/index.ts`
-- [ ] Add description: "Debug mode - manual session creation"
+- [x] Add `--debug` / `-d` flag to yargs in `src/index.ts`
+- [x] Add description: "Debug mode - manual session creation"
 
 #### State Changes
-- [ ] Add `debug` optional field to `LoopState` in `src/state.ts`
-- [ ] Pass debug flag from CLI to LoopOptions
+- [x] Add `debug` optional field to `LoopOptions` in `src/state.ts`
+- [x] Pass debug flag from CLI to LoopOptions
 
 #### Debug Mode Behavior
 - [ ] Skip plan file validation when debug mode enabled

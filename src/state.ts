@@ -80,6 +80,7 @@ export type LoopOptions = {
   serverUrl?: string;
   serverTimeoutMs?: number;
   agent?: string;
+  debug?: boolean;
 };
 
 /**

@@ -20,6 +20,7 @@ interface RalphConfig {
   server?: string;
   serverTimeout?: number;
   agent?: string;
+  debug?: boolean;
 }
 
 function loadGlobalConfig(): RalphConfig {
@@ -179,6 +180,12 @@ async function main() {
       description: "Agent to use (e.g., 'build', 'plan', 'general')",
       default: globalConfig.agent,
     })
+    .option("debug", {
+      alias: "d",
+      type: "boolean",
+      description: "Debug mode - manual session creation",
+      default: globalConfig.debug ?? false,
+    })
     .help()
     .alias("h", "help")
     .version(false)
@@ -259,6 +266,7 @@ async function main() {
       serverUrl: argv.server,
       serverTimeoutMs: argv.serverTimeout,
       agent: argv.agent,
+      debug: argv.debug,
     };
 
 // Create abort controller for cancellation
