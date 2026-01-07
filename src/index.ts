@@ -584,6 +584,27 @@ async function main() {
           errorRetryAt: undefined,
         }));
       },
+      onTokens: (tokens) => {
+        // Accumulate token usage for footer display
+        batchedUpdater.queueUpdate((prev) => {
+          const existing = prev.tokens || {
+            input: 0,
+            output: 0,
+            reasoning: 0,
+            cacheRead: 0,
+            cacheWrite: 0,
+          };
+          return {
+            tokens: {
+              input: existing.input + tokens.input,
+              output: existing.output + tokens.output,
+              reasoning: existing.reasoning + tokens.reasoning,
+              cacheRead: existing.cacheRead + tokens.cacheRead,
+              cacheWrite: existing.cacheWrite + tokens.cacheWrite,
+            },
+          };
+        });
+      },
     }, abortController.signal).catch((error) => {
       log("main", "Loop error", { error: error instanceof Error ? error.message : String(error) });
       console.error("Loop error:", error);

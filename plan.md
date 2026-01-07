@@ -491,10 +491,10 @@
            Callback maps StepFinishPart.tokens to TokenUsage type and fires onTokens callback. -->
 
 #### Token Display
-- [ ] Add token display to footer component
-- [ ] Format: "Tokens: 1.2K in / 500 out / 200 reasoning"
-- [ ] Use `formatNumber()` helper for compact display
-- [ ] Only show when tokens > 0
+- [x] Add token display to footer component
+- [x] Format: "Tokens: 1.2K in / 500 out / 200 reasoning"
+- [x] Use `formatNumber()` helper for compact display
+- [x] Only show when tokens > 0
 
 #### Session Reset
 - [ ] Call `reset()` on session start

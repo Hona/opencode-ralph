@@ -5,6 +5,18 @@ export type PersistedState = {
   planFile: string; // Which plan file we're working on
 };
 
+/**
+ * Token usage statistics for display.
+ * Tracks cumulative token counts across the session.
+ */
+export type TokenUsage = {
+  input: number;
+  output: number;
+  reasoning: number;
+  cacheRead: number;
+  cacheWrite: number;
+};
+
 export type LoopState = {
   status: "starting" | "running" | "paused" | "complete" | "error" | "idle";
   iteration: number;
@@ -23,6 +35,8 @@ export type LoopState = {
   // Error backoff fields for retry countdown display
   errorBackoffMs?: number; // Current backoff delay in milliseconds (undefined when no backoff active)
   errorRetryAt?: number; // Timestamp (epoch ms) when next retry will occur (undefined when no backoff active)
+  // Token usage for display in footer
+  tokens?: TokenUsage;
 };
 
 export type ToolEvent = {

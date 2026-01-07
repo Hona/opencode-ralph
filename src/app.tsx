@@ -862,6 +862,7 @@ function AppContent(props: AppContentProps) {
         linesAdded={props.state().linesAdded}
         linesRemoved={props.state().linesRemoved}
         sessionActive={!!props.state().sessionId}
+        tokens={props.state().tokens}
       />
       <PausedOverlay visible={props.state().status === "paused"} />
       <SteeringOverlay

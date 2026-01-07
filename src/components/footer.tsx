@@ -1,5 +1,6 @@
 import { useTheme } from "../context/ThemeContext";
-import { formatDuration } from "../util/time";
+import { formatDuration, formatNumber } from "../util/time";
+import type { TokenUsage } from "../state";
 
 export type FooterProps = {
   commits: number;
@@ -8,6 +9,7 @@ export type FooterProps = {
   linesAdded: number;
   linesRemoved: number;
   sessionActive?: boolean;
+  tokens?: TokenUsage;
 };
 
 /**
@@ -38,6 +40,21 @@ export function Footer(props: FooterProps) {
 
       {/* Stats (right side) */}
       <text>
+        {/* Token display - only show when tokens > 0 */}
+        {props.tokens && (props.tokens.input > 0 || props.tokens.output > 0) && (
+          <>
+            <span style={{ fg: t.borderSubtle }}>{formatNumber(props.tokens.input)}in</span>
+            <span style={{ fg: t.textMuted }}>/</span>
+            <span style={{ fg: t.borderSubtle }}>{formatNumber(props.tokens.output)}out</span>
+            {props.tokens.reasoning > 0 && (
+              <>
+                <span style={{ fg: t.textMuted }}>/</span>
+                <span style={{ fg: t.borderSubtle }}>{formatNumber(props.tokens.reasoning)}r</span>
+              </>
+            )}
+            <span style={{ fg: t.textMuted }}> · </span>
+          </>
+        )}
         <span style={{ fg: t.success }}>+{props.linesAdded}</span>
         <span style={{ fg: t.textMuted }}>/</span>
         <span style={{ fg: t.error }}>-{props.linesRemoved}</span>
