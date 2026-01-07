@@ -684,7 +684,7 @@
 - [x] Verify agent flag passes through to API
 - [x] Verify command palette shows/filters commands
 - [x] Verify terminal launches with correct command
-- [ ] Verify debug mode creates manual sessions
+- [x] Verify debug mode creates manual sessions
 - [ ] Verify tasks panel shows all tasks
 - [ ] Verify themes apply correctly
 - [ ] Verify tokens accumulate properly
