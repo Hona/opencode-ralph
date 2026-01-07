@@ -72,3 +72,14 @@ export type LoopOptions = {
   serverUrl?: string;
   serverTimeoutMs?: number;
 };
+
+/**
+ * Information about the current active session.
+ * Used for steering mode and session lifecycle management.
+ */
+export type SessionInfo = {
+  sessionId: string;
+  serverUrl: string;
+  attached: boolean;
+  sendMessage: (message: string) => Promise<void>;
+};
