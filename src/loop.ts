@@ -229,6 +229,7 @@ export type LoopCallbacks = {
   onError: (error: string) => void;
   onIdleChanged: (isIdle: boolean) => void;
   onSessionCreated?: (session: SessionInfo) => void;
+  onSessionEnded?: (sessionId: string) => void;
 };
 
 export async function runLoop(
