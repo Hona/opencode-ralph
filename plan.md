@@ -680,7 +680,7 @@
 ### Manual Testing
 - [x] Verify steering mode sends messages correctly
 - [x] Verify custom prompt file is read
-- [ ] Verify backoff delays work as expected
+- [x] Verify backoff delays work as expected
 - [ ] Verify agent flag passes through to API
 - [ ] Verify command palette shows/filters commands
 - [ ] Verify terminal launches with correct command

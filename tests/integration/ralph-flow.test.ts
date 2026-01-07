@@ -1401,4 +1401,152 @@ describe("ralph flow integration", () => {
       expect(capturedTasks!.total).toBe(10);
     });
   });
+
+  describe("error backoff", () => {
+    it("should call onBackoff and onBackoffCleared when session.error occurs", async () => {
+      // Create a mock event stream that emits a session.error first, then succeeds
+      let callCount = 0;
+      const mockEventSubscribeWithError = mock(() => {
+        callCount++;
+        if (callCount === 1) {
+          // First call: emit session.error after server.connected
+          return Promise.resolve({
+            stream: (async function* () {
+              yield { type: "server.connected", properties: {} };
+              yield {
+                type: "session.error",
+                properties: {
+                  sessionID: "test-session-123",
+                  error: { name: "TestError", data: { message: "Simulated error for backoff test" } },
+                },
+              };
+            })(),
+          });
+        }
+        // Subsequent calls: succeed
+        return Promise.resolve(createMockEventStream());
+      });
+
+      // Temporarily replace the mock
+      const originalSubscribe = mockEventSubscribe;
+      // @ts-ignore - direct mock replacement for this test
+      mockEventSubscribe.mockImplementation(mockEventSubscribeWithError);
+
+      let backoffCalled = false;
+      let backoffMs = 0;
+      let backoffRetryAt = 0;
+      let backoffClearedCalled = false;
+      let errorCount = 0;
+
+      const options: LoopOptions = {
+        planFile: testPlanFile,
+        model: "anthropic/claude-sonnet-4",
+        prompt: "Test prompt for {plan}",
+      };
+
+      const persistedState: PersistedState = {
+        startTime: Date.now(),
+        initialCommitHash: "abc123",
+        iterationTimes: [],
+        planFile: testPlanFile,
+      };
+
+      const callbacks: LoopCallbacks = {
+        ...createTestCallbacks(),
+        onBackoff: (ms, retryAt) => {
+          backoffCalled = true;
+          backoffMs = ms;
+          backoffRetryAt = retryAt;
+          callbackOrder.push(`onBackoff:${ms}`);
+        },
+        onBackoffCleared: () => {
+          backoffClearedCalled = true;
+          callbackOrder.push("onBackoffCleared");
+        },
+        onError: (error) => {
+          errorCount++;
+          callbackOrder.push(`onError:${error}`);
+        },
+      };
+
+      const controller = new AbortController();
+
+      // Create .ralph-done to stop after the second (successful) iteration
+      cleanupFiles.push(".ralph-done");
+      // Schedule done file creation after enough time for:
+      // - First iteration (fails with session.error)
+      // - Backoff delay (~5 seconds for first attempt)
+      // - Second iteration (succeeds)
+      setTimeout(async () => {
+        await Bun.write(".ralph-done", "");
+      }, 6000);
+
+      await runLoop(options, persistedState, callbacks, controller.signal);
+
+      // Verify error was caught
+      expect(errorCount).toBeGreaterThanOrEqual(1);
+      expect(callbackOrder.some(c => c.startsWith("onError:"))).toBe(true);
+
+      // Verify onBackoff was called with correct parameters
+      expect(backoffCalled).toBe(true);
+      expect(backoffMs).toBeGreaterThanOrEqual(5000); // Base delay
+      expect(backoffMs).toBeLessThanOrEqual(5500); // Base + 10% jitter
+      expect(backoffRetryAt).toBeGreaterThan(Date.now() - 10000); // Should be a timestamp
+
+      // Verify onBackoffCleared was called after the backoff period
+      expect(backoffClearedCalled).toBe(true);
+
+      // Verify callback order: error -> backoff -> backoffCleared
+      const errorIndex = callbackOrder.findIndex(c => c.startsWith("onError:"));
+      const backoffIndex = callbackOrder.findIndex(c => c.startsWith("onBackoff:"));
+      const clearedIndex = callbackOrder.indexOf("onBackoffCleared");
+      
+      expect(errorIndex).toBeGreaterThan(-1);
+      expect(backoffIndex).toBeGreaterThan(errorIndex); // Backoff happens after error
+      expect(clearedIndex).toBeGreaterThan(backoffIndex); // Cleared after backoff starts
+
+      // Restore original mock
+      mockEventSubscribe.mockReset();
+    }, 15000); // Increase timeout for this test as it includes real backoff delay
+
+    it("should reset error count and skip backoff after successful iteration", async () => {
+      let backoffCallCount = 0;
+
+      const options: LoopOptions = {
+        planFile: testPlanFile,
+        model: "anthropic/claude-sonnet-4",
+        prompt: "Test prompt for {plan}",
+      };
+
+      const persistedState: PersistedState = {
+        startTime: Date.now(),
+        initialCommitHash: "abc123",
+        iterationTimes: [],
+        planFile: testPlanFile,
+      };
+
+      const callbacks: LoopCallbacks = {
+        ...createTestCallbacks(),
+        onBackoff: (ms, retryAt) => {
+          backoffCallCount++;
+          callbackOrder.push(`onBackoff:${ms}`);
+        },
+        onBackoffCleared: () => {
+          callbackOrder.push("onBackoffCleared");
+        },
+      };
+
+      const controller = new AbortController();
+
+      // Create .ralph-done to stop immediately
+      cleanupFiles.push(".ralph-done");
+      await Bun.write(".ralph-done", "");
+
+      await runLoop(options, persistedState, callbacks, controller.signal);
+
+      // Verify onBackoff was NOT called (no errors occurred)
+      expect(backoffCallCount).toBe(0);
+      expect(callbackOrder.some(c => c.startsWith("onBackoff:"))).toBe(false);
+    });
+  });
 });
