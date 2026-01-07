@@ -459,7 +459,7 @@
 
 #### Component Updates
 - [x] Update `src/components/header.tsx` to use theme colors
-- [ ] Update `src/components/footer.tsx` to use theme colors
+- [x] Update `src/components/footer.tsx` to use theme colors
 - [ ] Update `src/components/log.tsx` to use theme colors
 - [ ] Update dialog components to use theme colors
 - [ ] Update steering overlay to use theme colors

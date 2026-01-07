@@ -1,4 +1,4 @@
-import { colors } from "./colors";
+import { useTheme } from "../context/ThemeContext";
 import { formatDuration } from "../util/time";
 
 export type FooterProps = {
@@ -15,6 +15,9 @@ export type FooterProps = {
  * Compact single-line layout for log-centric view.
  */
 export function Footer(props: FooterProps) {
+  const { theme } = useTheme();
+  const t = theme();
+  
   return (
     <box
       flexDirection="row"
@@ -23,11 +26,11 @@ export function Footer(props: FooterProps) {
       alignItems="center"
       paddingLeft={1}
       paddingRight={1}
-      backgroundColor={colors.bgPanel}
+      backgroundColor={t.backgroundPanel}
     >
       {/* Keybind hints (left side) */}
-      <text fg={colors.fgDark}>
-        <span style={{ fg: colors.fgMuted }}>q</span> quit  <span style={{ fg: colors.fgMuted }}>p</span> {props.paused ? "resume" : "pause"}  <span style={{ fg: colors.fgMuted }}>T</span> tasks{props.sessionActive && (<>  <span style={{ fg: colors.fgMuted }}>:</span> steer</>)}
+      <text fg={t.textMuted}>
+        <span style={{ fg: t.borderSubtle }}>q</span> quit  <span style={{ fg: t.borderSubtle }}>p</span> {props.paused ? "resume" : "pause"}  <span style={{ fg: t.borderSubtle }}>T</span> tasks{props.sessionActive && (<>  <span style={{ fg: t.borderSubtle }}>:</span> steer</>)}
       </text>
 
       {/* Spacer */}
@@ -35,13 +38,13 @@ export function Footer(props: FooterProps) {
 
       {/* Stats (right side) */}
       <text>
-        <span style={{ fg: colors.green }}>+{props.linesAdded}</span>
-        <span style={{ fg: colors.fgDark }}>/</span>
-        <span style={{ fg: colors.red }}>-{props.linesRemoved}</span>
-        <span style={{ fg: colors.fgDark }}> · </span>
-        <span style={{ fg: colors.fgMuted }}>{props.commits}c</span>
-        <span style={{ fg: colors.fgDark }}> · </span>
-        <span style={{ fg: colors.fgMuted }}>{formatDuration(props.elapsed)}</span>
+        <span style={{ fg: t.success }}>+{props.linesAdded}</span>
+        <span style={{ fg: t.textMuted }}>/</span>
+        <span style={{ fg: t.error }}>-{props.linesRemoved}</span>
+        <span style={{ fg: t.textMuted }}> · </span>
+        <span style={{ fg: t.borderSubtle }}>{props.commits}c</span>
+        <span style={{ fg: t.textMuted }}> · </span>
+        <span style={{ fg: t.borderSubtle }}>{formatDuration(props.elapsed)}</span>
       </text>
     </box>
   );
