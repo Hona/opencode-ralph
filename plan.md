@@ -410,7 +410,7 @@
 - [x] Copy `cursor.json` theme file
 - [x] Copy `dracula.json` theme file
 - [x] Copy `everforest.json` theme file
-- [ ] Copy `flexoki.json` theme file
+- [x] Copy `flexoki.json` theme file
 - [ ] Copy `github.json` theme file
 - [ ] Copy `gruvbox.json` theme file
 - [ ] Copy `kanagawa.json` theme file
