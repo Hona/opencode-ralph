@@ -325,6 +325,10 @@ export async function runLoop(
       log("loop", "Plan parsed", { done, total });
       callbacks.onTasksUpdated(done, total);
 
+      // Parse model and build prompt before session creation
+      const promptText = buildPrompt(options);
+      const { providerID, modelID } = parseModel(options.model);
+
       // Create session (10.13)
       log("loop", "Creating session...");
       const sessionResult = await client.session.create();
@@ -336,13 +340,23 @@ export async function runLoop(
       const sessionId = sessionResult.data.id;
       log("loop", "Session created", { sessionId });
 
+      // Create sendMessage function for steering mode
+      const sendMessage = async (message: string): Promise<void> => {
+        log("loop", "Sending steering message", { sessionId, message: message.slice(0, 50) });
+        await client.session.prompt({
+          path: { id: sessionId },
+          body: {
+            parts: [{ type: "text", text: message }],
+            model: { providerID, modelID },
+          },
+        });
+      };
+
       // Subscribe to events - the SSE connection is established when we start iterating
       log("loop", "Subscribing to events...");
       const events = await client.event.subscribe();
 
       let promptSent = false;
-      const promptText = buildPrompt(options);
-      const { providerID, modelID } = parseModel(options.model);
 
       // Set idle state while waiting for LLM response
       callbacks.onIdleChanged(true);
