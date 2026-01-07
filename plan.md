@@ -147,11 +147,11 @@
 - [x] Create `useDialog()` hook for consuming context
 
 #### Base Dialog Component
-- [ ] Create `src/ui/Dialog.tsx` file
-- [ ] Add dark overlay background (semi-transparent)
-- [ ] Add centered content box with border
-- [ ] Add border styling (default color)
-- [ ] Add Escape key handler to call `pop()`
+- [x] Create `src/ui/Dialog.tsx` file
+- [x] Add dark overlay background (semi-transparent)
+- [x] Add centered content box with border
+- [x] Add border styling (default color)
+- [x] Add Escape key handler to call `pop()`
 
 #### Confirmation Dialog
 - [ ] Create `src/ui/DialogConfirm.tsx` file
