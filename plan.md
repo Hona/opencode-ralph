@@ -636,7 +636,7 @@ Allow Ralph to connect to an existing/running OpenCode server via `--server` URL
 - [ ] **10.4.1** All new functions have JSDoc comments
 - [ ] **10.4.2** No `console.log` statements left in code
 - [ ] **10.4.3** Error messages are clear and actionable
-- [ ] **10.4.4** All exports are intentional (don't export internal helpers)
+- [x] **10.4.4** All exports are intentional (don't export internal helpers)
 - [ ] **10.4.5** No TODO/FIXME comments left unresolved
 
 ### 10.5 Final cleanup
