@@ -198,16 +198,16 @@
 - [x] Install `fuzzysort` package: `bun add fuzzysort`
 
 #### Context Provider
-- [ ] Create `src/context/CommandContext.tsx` file
-- [ ] Define `CommandOption` interface with `title`, `value`, `description`, `category`, `keybind`, `disabled`, `onSelect`
-- [ ] Define `CommandContextValue` interface with `register`, `show`, `trigger`, `suspended`, `keybinds`
-- [ ] Create `CommandContext` using `createContext()`
-- [ ] Create `CommandProvider` component
-- [ ] Implement `register()` to store command factory functions
-- [ ] Implement `show()` to open command palette dialog
-- [ ] Implement `trigger(value)` to execute command by value
-- [ ] Implement `keybinds(enabled)` to toggle global keybinds
-- [ ] Create `useCommand()` hook for consuming context
+- [x] Create `src/context/CommandContext.tsx` file
+- [x] Define `CommandOption` interface with `title`, `value`, `description`, `category`, `keybind`, `disabled`, `onSelect`
+- [x] Define `CommandContextValue` interface with `register`, `show`, `trigger`, `suspended`, `keybinds`
+- [x] Create `CommandContext` using `createContext()`
+- [x] Create `CommandProvider` component
+- [x] Implement `register()` to store command factory functions
+- [x] Implement `show()` to open command palette dialog
+- [x] Implement `trigger(value)` to execute command by value
+- [x] Implement `keybinds(enabled)` to toggle global keybinds
+- [x] Create `useCommand()` hook for consuming context
 
 #### Fuzzy Search Dialog
 - [ ] Create `src/ui/DialogSelect.tsx` file
