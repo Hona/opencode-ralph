@@ -535,24 +535,24 @@
 ### 3.4 Clipboard Support
 
 #### Clipboard Tool Detection
-- [ ] Create `src/lib/clipboard.ts` file
-- [ ] Define `ClipboardTool` type
-- [ ] Define `ClipboardResult` type with success/error
-- [ ] Implement `detectClipboardTool()` function
-- [ ] Check WAYLAND_DISPLAY for wl-copy (Linux Wayland)
-- [ ] Check for xclip availability (Linux X11)
-- [ ] Check for xsel availability (Linux X11 fallback)
-- [ ] Use pbcopy on macOS
-- [ ] Use clip on Windows
-- [ ] Cache detection result
+- [x] Create `src/lib/clipboard.ts` file
+- [x] Define `ClipboardTool` type
+- [x] Define `ClipboardResult` type with success/error
+- [x] Implement `detectClipboardTool()` function
+- [x] Check WAYLAND_DISPLAY for wl-copy (Linux Wayland)
+- [x] Check for xclip availability (Linux X11)
+- [x] Check for xsel availability (Linux X11 fallback)
+- [x] Use pbcopy on macOS
+- [x] Use clip on Windows
+- [x] Cache detection result
 
 #### Copy Function
-- [ ] Implement `copyToClipboard()` function
-- [ ] Call `detectClipboardTool()` to get tool
-- [ ] Spawn tool process with Bun.spawn
-- [ ] Pipe text to tool's stdin
-- [ ] Wait for process to complete
-- [ ] Return success or error result
+- [x] Implement `copyToClipboard()` function
+- [x] Call `detectClipboardTool()` to get tool
+- [x] Spawn tool process with Bun.spawn
+- [x] Pipe text to tool's stdin
+- [x] Wait for process to complete
+- [x] Return success or error result
 
 #### Copy Action Integration
 - [ ] Create "Copy attach command" action
