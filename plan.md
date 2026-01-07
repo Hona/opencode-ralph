@@ -210,13 +210,13 @@
 - [x] Create `useCommand()` hook for consuming context
 
 #### Fuzzy Search Dialog
-- [ ] Create `src/ui/DialogSelect.tsx` file
-- [ ] Add search input at top
-- [ ] Add results list below input
-- [ ] Integrate fuzzysort for filtering
-- [ ] Highlight matched characters in results
-- [ ] Show keybind hint for each option
-- [ ] Show description text if present
+- [x] Create `src/ui/DialogSelect.tsx` file
+- [x] Add search input at top
+- [x] Add results list below input
+- [x] Integrate fuzzysort for filtering
+- [x] Highlight matched characters in results
+- [x] Show keybind hint for each option
+- [x] Show description text if present
 
 #### Keyboard Navigation
 - [ ] Add ↑/↓ arrow key handlers for selection
