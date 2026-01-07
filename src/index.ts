@@ -248,6 +248,7 @@ async function main() {
       planFile: argv.plan,
       model: argv.model,
       prompt: argv.prompt || "",
+      promptFile: argv.promptFile,
       serverUrl: argv.server,
       serverTimeoutMs: argv.serverTimeout,
     };

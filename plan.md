@@ -57,9 +57,9 @@
 - [x] Add description: "Path to prompt file"
 
 #### State and Config
-- [ ] Add `promptFile` field to `LoopOptions` in `src/state.ts`
-- [ ] Add `promptFile` field to `RalphConfig` type in `src/index.ts`
-- [ ] Read `promptFile` from global config in `src/index.ts`
+- [x] Add `promptFile` field to `LoopOptions` in `src/state.ts`
+- [x] Add `promptFile` field to `RalphConfig` type in `src/index.ts`
+- [x] Read `promptFile` from global config in `src/index.ts`
 
 #### Prompt Building Logic
 - [ ] Create `buildPrompt()` function in `src/loop.ts`
