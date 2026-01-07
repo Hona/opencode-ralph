@@ -12,23 +12,23 @@ export type HeaderProps = {
 
 /**
  * Header component displaying status, iteration, tasks, and ETA.
- * Uses flexDirection="row" with a bottom border.
+ * Compact single-line layout for log-centric view.
  */
 export function Header(props: HeaderProps) {
   // Status indicator with appropriate icon and color
   const getStatusDisplay = () => {
     switch (props.status) {
       case "running":
-        return { icon: "\u25A0", color: colors.green }; // ■
+        return { icon: "●", color: colors.green };
       case "paused":
-        return { icon: "\u23F8", color: colors.yellow }; // ⏸
+        return { icon: "⏸", color: colors.yellow };
       case "complete":
-        return { icon: "\u2713", color: colors.green }; // ✓
+        return { icon: "✓", color: colors.green };
       case "error":
-        return { icon: "\u2717", color: colors.red }; // ✗
+        return { icon: "✗", color: colors.red };
       case "starting":
       default:
-        return { icon: "\u25CC", color: colors.fgMuted }; // ◌
+        return { icon: "◌", color: colors.fgMuted };
     }
   };
 
@@ -37,49 +37,43 @@ export function Header(props: HeaderProps) {
   // Memoize progress bar strings - only recompute when tasksComplete or totalTasks change
   const filledCount = createMemo(() =>
     props.totalTasks > 0
-      ? Math.round((props.tasksComplete / props.totalTasks) * 10)
+      ? Math.round((props.tasksComplete / props.totalTasks) * 8)
       : 0
   );
-  const filledBar = createMemo(() => "\u25A0".repeat(filledCount()));
-  const emptyBar = createMemo(() => "\u25A1".repeat(10 - filledCount()));
+  const filledBar = createMemo(() => "█".repeat(filledCount()));
+  const emptyBar = createMemo(() => "░".repeat(8 - filledCount()));
 
   return (
     <box
       flexDirection="row"
       width="100%"
-      height={2}
+      height={1}
       alignItems="center"
       paddingLeft={1}
       paddingRight={1}
-      borderStyle="single"
-      border={["bottom"]}
-      borderColor={colors.border}
-      backgroundColor={colors.bg}
+      backgroundColor={colors.bgPanel}
     >
       {/* Status indicator */}
       <text fg={statusDisplay.color}>{statusDisplay.icon}</text>
       <text fg={colors.fg}> {props.status}</text>
 
       {/* Separator */}
-      <text fg={colors.fgMuted}>{"  \u2502  "}</text>
+      <text fg={colors.fgDark}>{" │ "}</text>
 
       {/* Iteration display */}
-      <text fg={colors.fg}>iteration {props.iteration}</text>
+      <text fg={colors.fgMuted}>iter </text>
+      <text fg={colors.fg}>{props.iteration}</text>
 
       {/* Separator */}
-      <text fg={colors.fgMuted}>{"  \u2502  "}</text>
+      <text fg={colors.fgDark}>{" │ "}</text>
 
       {/* Task progress with inline progress bar */}
-      <text fg={colors.fg}>
-        {props.tasksComplete}/{props.totalTasks} tasks{" "}
-        <span style={{ fg: colors.fgMuted }}>[</span>
-        <span style={{ fg: colors.green }}>{filledBar()}</span>
-        <span style={{ fg: colors.fgMuted }}>{emptyBar()}</span>
-        <span style={{ fg: colors.fgMuted }}>]</span>
-      </text>
+      <text fg={colors.fgMuted}>{filledBar()}</text>
+      <text fg={colors.fgDark}>{emptyBar()}</text>
+      <text fg={colors.fg}> {props.tasksComplete}/{props.totalTasks}</text>
 
       {/* Separator */}
-      <text fg={colors.fgMuted}>{"  \u2502  "}</text>
+      <text fg={colors.fgDark}>{" │ "}</text>
 
       {/* ETA display */}
       <text fg={colors.fgMuted}>{formatEta(props.eta)}</text>

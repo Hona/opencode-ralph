@@ -1,4 +1,4 @@
-import { For, Match, Show, Switch, createEffect, createMemo, createSignal, onCleanup } from "solid-js";
+import { For, Match, Switch, createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 import { colors, TOOL_ICONS } from "./colors";
 import { formatDuration } from "../util/time";
 import type { ToolEvent } from "../state";
@@ -9,7 +9,7 @@ const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", 
 /**
  * Default icon when tool type is unknown
  */
-const DEFAULT_ICON = "\u2699"; // ⚙
+const DEFAULT_ICON = "⚙"; // ⚙
 
 /**
  * Generates a stable key for an event item.
@@ -28,6 +28,7 @@ export function getEventKey(event: ToolEvent): string {
  * - Purple: task/delegation (task)
  * - Cyan: web operations (webfetch, websearch, codesearch)
  * - Muted: shell commands (bash)
+ * - Orange: reasoning/thought
  * - Default (fg): todo operations and unknown
  */
 function getToolColor(icon: string | undefined): string {
@@ -45,6 +46,7 @@ function getToolColor(icon: string | undefined): string {
   )
     return colors.cyan;
   if (icon === TOOL_ICONS.bash) return colors.fgMuted;
+  if (icon === TOOL_ICONS.thought) return colors.orange;
   // todowrite and todoread use default fg color
   return colors.fg;
 }
@@ -152,6 +154,22 @@ function ToolEventItem(props: { event: ToolEvent }) {
 }
 
 /**
+ * Renders a reasoning/thought event line.
+ * Format: {icon} {text}
+ * Uses orange color and italic styling to distinguish from tool events.
+ */
+function ReasoningEventItem(props: { event: ToolEvent }) {
+  const icon = TOOL_ICONS.thought;
+
+  return (
+    <box width="100%" flexDirection="row">
+      <text fg={colors.orange}>{icon}</text>
+      <text fg={colors.fgMuted}> {props.event.text}</text>
+    </box>
+  );
+}
+
+/**
  * Scrollable event log component displaying tool events and iteration separators.
  * Uses stickyScroll to keep the view at the bottom as new events arrive.
  * 
@@ -189,6 +207,9 @@ export function Log(props: LogProps) {
             </Match>
             <Match when={event.type === "tool"}>
               <ToolEventItem event={event} />
+            </Match>
+            <Match when={event.type === "reasoning"}>
+              <ReasoningEventItem event={event} />
             </Match>
           </Switch>
         )}
