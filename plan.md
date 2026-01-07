@@ -290,12 +290,12 @@
 - [x] Handle missing sessionId gracefully
 
 #### Config Persistence
-- [ ] Create `src/lib/config.ts` file
-- [ ] Define config file path: `~/.config/ralph/config.json`
-- [ ] Implement `loadConfig()` to read JSON file
-- [ ] Implement `saveConfig()` to write JSON file
-- [ ] Add `preferredTerminal` field to config
-- [ ] Add `customTerminalCommand` field to config
+- [x] Create `src/lib/config.ts` file
+- [x] Define config file path: `~/.config/ralph/config.json`
+- [x] Implement `loadConfig()` to read JSON file
+- [x] Implement `saveConfig()` to write JSON file
+- [x] Add `preferredTerminal` field to config
+- [x] Add `customTerminalCommand` field to config
 
 #### Terminal Config Dialog
 - [ ] Create terminal selection dialog component
