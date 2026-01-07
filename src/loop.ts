@@ -654,6 +654,7 @@ export async function runLoop(
                   icon: "thought",
                   text: truncated,
                   timestamp: Date.now(),
+                  verbose: true,
                 });
               }
             }

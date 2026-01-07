@@ -647,7 +647,7 @@
 
 #### Verbose Event Styling
 - [x] Add `verbose` flag to ActivityEvent
-- [ ] Mark reasoning events as verbose
+- [x] Mark reasoning events as verbose
 - [ ] Mark file_read events as verbose
 - [ ] Apply dimmed text style to verbose events
 
