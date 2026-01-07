@@ -16,6 +16,10 @@ export type LoopState = {
   events: ToolEvent[];
   error?: string;
   isIdle: boolean; // True when waiting for LLM response, false when tool events are arriving
+  // Session lifecycle fields for steering mode
+  sessionId?: string;
+  serverUrl?: string;
+  attached?: boolean;
 };
 
 export type ToolEvent = {

@@ -8,9 +8,9 @@
 - [x] Add `SessionInfo` type to `src/state.ts` with `sessionId`, `serverUrl`, `attached`, `sendMessage` fields
 - [x] Add `onSessionCreated` callback type to `LoopCallbacks` in `src/loop.ts`
 - [x] Add `onSessionEnded` callback type to `LoopCallbacks` in `src/loop.ts`
-- [ ] Add `sessionId` field to `LoopState` in `src/state.ts`
-- [ ] Add `serverUrl` field to `LoopState` in `src/state.ts`
-- [ ] Add `attached` field to `LoopState` in `src/state.ts`
+- [x] Add `sessionId` field to `LoopState` in `src/state.ts`
+- [x] Add `serverUrl` field to `LoopState` in `src/state.ts`
+- [x] Add `attached` field to `LoopState` in `src/state.ts`
 
 #### Session Message Sending
 - [ ] Implement `sendMessage` function in `src/loop.ts` using `client.session.prompt()`
