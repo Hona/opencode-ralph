@@ -363,6 +363,26 @@ function AppContent(props: AppContentProps) {
         },
       },
     ]);
+
+    // Register "Toggle tasks panel" action
+    command.register("toggleTasks", () => [
+      {
+        title: "Toggle tasks panel",
+        value: "toggleTasks",
+        description: "Show/hide the tasks checklist from plan file",
+        keybind: keymap.toggleTasks.label,
+        onSelect: () => {
+          // Tasks panel not yet implemented (Phase 2.5)
+          dialog.show(() => (
+            <DialogAlert
+              title="Tasks Panel"
+              message="Tasks panel is not yet implemented.\n\nThis feature will show a checklist of tasks from your plan file."
+              variant="info"
+            />
+          ));
+        },
+      },
+    ]);
   });
 
   /**

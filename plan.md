@@ -233,7 +233,7 @@
 - [x] Define `togglePause` keybind in keymap
 - [x] Register "Copy attach command" action
 - [x] Register "Choose default terminal" action
-- [ ] Register "Toggle tasks panel" action
+- [x] Register "Toggle tasks panel" action
 - [x] Register "Pause/Resume" action
 
 #### Ctrl+P Handler
