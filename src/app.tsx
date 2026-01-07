@@ -1,6 +1,6 @@
 import { render, useKeyboard, useRenderer } from "@opentui/solid";
 import type { KeyEvent } from "@opentui/core";
-import { createSignal, onCleanup, onMount, Setter } from "solid-js";
+import { createSignal, onCleanup, onMount, Setter, type Accessor } from "solid-js";
 import { Header } from "./components/header";
 import { Log } from "./components/log";
 import { Footer } from "./components/footer";
@@ -15,6 +15,7 @@ import { keymap, matchesKeybind, type KeybindDef } from "./lib/keymap";
 import type { LoopState, LoopOptions, PersistedState } from "./state";
 import { detectInstalledTerminals, launchTerminal, getAttachCommand as getAttachCmdFromTerminal, type KnownTerminal } from "./lib/terminal-launcher";
 import { loadConfig, setPreferredTerminal } from "./lib/config";
+import { parsePlanTasks, type Task } from "./plan";
 import { colors } from "./components/colors";
 import { calculateEta } from "./util/time";
 import { log } from "./util/log";
@@ -157,6 +158,23 @@ export function App(props: AppProps) {
   const [commandMode, setCommandMode] = createSignal(false);
   const [commandInput, setCommandInput] = createSignal("");
 
+  // Tasks panel state signals
+  const [showTasks, setShowTasks] = createSignal(false);
+  const [tasks, setTasks] = createSignal<Task[]>([]);
+
+  // Function to refresh tasks from plan file
+  const refreshTasks = async () => {
+    if (props.options.planFile) {
+      const parsed = await parsePlanTasks(props.options.planFile);
+      setTasks(parsed);
+    }
+  };
+
+  // Initialize tasks on mount
+  onMount(() => {
+    refreshTasks();
+  });
+
   // Signal to track iteration times (for ETA calculation)
   const [iterationTimes, setIterationTimes] = createSignal<number[]>(
     props.iterationTimesRef || [...props.persistedState.iterationTimes]
@@ -249,6 +267,10 @@ export function App(props: AppProps) {
           onKeyboardEvent={props.onKeyboardEvent}
           keyboardEventNotified={keyboardEventNotified}
           setKeyboardEventNotified={(v: boolean) => { keyboardEventNotified = v; }}
+          showTasks={showTasks}
+          setShowTasks={setShowTasks}
+          tasks={tasks}
+          refreshTasks={refreshTasks}
         />
       </CommandProvider>
     </DialogProvider>
@@ -273,6 +295,10 @@ type AppContentProps = {
   onKeyboardEvent?: () => void;
   keyboardEventNotified: boolean;
   setKeyboardEventNotified: (v: boolean) => void;
+  showTasks: () => boolean;
+  setShowTasks: (v: boolean) => void;
+  tasks: () => Task[];
+  refreshTasks: () => Promise<void>;
 };
 
 /**

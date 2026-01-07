@@ -370,9 +370,9 @@
 - [x] Add ESC key handler to close (handled via onClose callback from parent)
 
 #### Tasks State
-- [ ] Add `showTasks` signal to `src/app.tsx`
-- [ ] Add `tasks` signal to store parsed tasks
-- [ ] Initialize tasks by parsing plan file on mount
+- [x] Add `showTasks` signal to `src/app.tsx`
+- [x] Add `tasks` signal to store parsed tasks
+- [x] Initialize tasks by parsing plan file on mount
 
 #### Task Refresh
 - [ ] Create `refreshTasks()` function
