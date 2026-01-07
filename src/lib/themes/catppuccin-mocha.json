@@ -1,0 +1,233 @@
+{
+  "$schema": "https://opencode.ai/theme.json",
+  "defs": {
+    "mochaRosewater": "#f5e0dc",
+    "mochaFlamingo": "#f2cdcd",
+    "mochaPink": "#f5c2e7",
+    "mochaMauve": "#cba6f7",
+    "mochaRed": "#f38ba8",
+    "mochaMaroon": "#eba0ac",
+    "mochaPeach": "#fab387",
+    "mochaYellow": "#f9e2af",
+    "mochaGreen": "#a6e3a1",
+    "mochaTeal": "#94e2d5",
+    "mochaSky": "#89dceb",
+    "mochaSapphire": "#74c7ec",
+    "mochaBlue": "#89b4fa",
+    "mochaLavender": "#b4befe",
+    "mochaText": "#cdd6f4",
+    "mochaSubtext1": "#bac2de",
+    "mochaSubtext0": "#a6adc8",
+    "mochaOverlay2": "#9399b2",
+    "mochaOverlay1": "#7f849c",
+    "mochaOverlay0": "#6c7086",
+    "mochaSurface2": "#585b70",
+    "mochaSurface1": "#45475a",
+    "mochaSurface0": "#313244",
+    "mochaBase": "#1e1e2e",
+    "mochaMantle": "#181825",
+    "mochaCrust": "#11111b"
+  },
+  "theme": {
+    "primary": {
+      "dark": "mochaBlue",
+      "light": "mochaBlue"
+    },
+    "secondary": {
+      "dark": "mochaMauve",
+      "light": "mochaMauve"
+    },
+    "accent": {
+      "dark": "mochaPink",
+      "light": "mochaPink"
+    },
+    "error": {
+      "dark": "mochaRed",
+      "light": "mochaRed"
+    },
+    "warning": {
+      "dark": "mochaYellow",
+      "light": "mochaYellow"
+    },
+    "success": {
+      "dark": "mochaGreen",
+      "light": "mochaGreen"
+    },
+    "info": {
+      "dark": "mochaTeal",
+      "light": "mochaTeal"
+    },
+    "text": {
+      "dark": "mochaText",
+      "light": "mochaText"
+    },
+    "textMuted": {
+      "dark": "mochaSubtext1",
+      "light": "mochaSubtext1"
+    },
+    "background": {
+      "dark": "mochaBase",
+      "light": "mochaBase"
+    },
+    "backgroundPanel": {
+      "dark": "mochaMantle",
+      "light": "mochaMantle"
+    },
+    "backgroundElement": {
+      "dark": "mochaCrust",
+      "light": "mochaCrust"
+    },
+    "border": {
+      "dark": "mochaSurface0",
+      "light": "mochaSurface0"
+    },
+    "borderActive": {
+      "dark": "mochaSurface1",
+      "light": "mochaSurface1"
+    },
+    "borderSubtle": {
+      "dark": "mochaSurface2",
+      "light": "mochaSurface2"
+    },
+    "diffAdded": {
+      "dark": "mochaGreen",
+      "light": "mochaGreen"
+    },
+    "diffRemoved": {
+      "dark": "mochaRed",
+      "light": "mochaRed"
+    },
+    "diffContext": {
+      "dark": "mochaOverlay2",
+      "light": "mochaOverlay2"
+    },
+    "diffHunkHeader": {
+      "dark": "mochaPeach",
+      "light": "mochaPeach"
+    },
+    "diffHighlightAdded": {
+      "dark": "mochaGreen",
+      "light": "mochaGreen"
+    },
+    "diffHighlightRemoved": {
+      "dark": "mochaRed",
+      "light": "mochaRed"
+    },
+    "diffAddedBg": {
+      "dark": "#1e3627",
+      "light": "#1e3627"
+    },
+    "diffRemovedBg": {
+      "dark": "#3b1d24",
+      "light": "#3b1d24"
+    },
+    "diffContextBg": {
+      "dark": "mochaMantle",
+      "light": "mochaMantle"
+    },
+    "diffLineNumber": {
+      "dark": "mochaSurface1",
+      "light": "mochaSurface1"
+    },
+    "diffAddedLineNumberBg": {
+      "dark": "#1a2e22",
+      "light": "#1a2e22"
+    },
+    "diffRemovedLineNumberBg": {
+      "dark": "#2f1a1f",
+      "light": "#2f1a1f"
+    },
+    "markdownText": {
+      "dark": "mochaText",
+      "light": "mochaText"
+    },
+    "markdownHeading": {
+      "dark": "mochaMauve",
+      "light": "mochaMauve"
+    },
+    "markdownLink": {
+      "dark": "mochaBlue",
+      "light": "mochaBlue"
+    },
+    "markdownLinkText": {
+      "dark": "mochaSky",
+      "light": "mochaSky"
+    },
+    "markdownCode": {
+      "dark": "mochaGreen",
+      "light": "mochaGreen"
+    },
+    "markdownBlockQuote": {
+      "dark": "mochaYellow",
+      "light": "mochaYellow"
+    },
+    "markdownEmph": {
+      "dark": "mochaYellow",
+      "light": "mochaYellow"
+    },
+    "markdownStrong": {
+      "dark": "mochaPeach",
+      "light": "mochaPeach"
+    },
+    "markdownHorizontalRule": {
+      "dark": "mochaSubtext0",
+      "light": "mochaSubtext0"
+    },
+    "markdownListItem": {
+      "dark": "mochaBlue",
+      "light": "mochaBlue"
+    },
+    "markdownListEnumeration": {
+      "dark": "mochaSky",
+      "light": "mochaSky"
+    },
+    "markdownImage": {
+      "dark": "mochaBlue",
+      "light": "mochaBlue"
+    },
+    "markdownImageText": {
+      "dark": "mochaSky",
+      "light": "mochaSky"
+    },
+    "markdownCodeBlock": {
+      "dark": "mochaText",
+      "light": "mochaText"
+    },
+    "syntaxComment": {
+      "dark": "mochaOverlay2",
+      "light": "mochaOverlay2"
+    },
+    "syntaxKeyword": {
+      "dark": "mochaMauve",
+      "light": "mochaMauve"
+    },
+    "syntaxFunction": {
+      "dark": "mochaBlue",
+      "light": "mochaBlue"
+    },
+    "syntaxVariable": {
+      "dark": "mochaRed",
+      "light": "mochaRed"
+    },
+    "syntaxString": {
+      "dark": "mochaGreen",
+      "light": "mochaGreen"
+    },
+    "syntaxNumber": {
+      "dark": "mochaPeach",
+      "light": "mochaPeach"
+    },
+    "syntaxType": {
+      "dark": "mochaYellow",
+      "light": "mochaYellow"
+    },
+    "syntaxOperator": {
+      "dark": "mochaSky",
+      "light": "mochaSky"
+    },
+    "syntaxPunctuation": {
+      "dark": "mochaText",
+      "light": "mochaText"
+    }
+  }
+}
