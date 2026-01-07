@@ -683,7 +683,7 @@
 - [x] Verify backoff delays work as expected
 - [x] Verify agent flag passes through to API
 - [x] Verify command palette shows/filters commands
-- [ ] Verify terminal launches with correct command
+- [x] Verify terminal launches with correct command
 - [ ] Verify debug mode creates manual sessions
 - [ ] Verify tasks panel shows all tasks
 - [ ] Verify themes apply correctly
