@@ -8,10 +8,11 @@ import { PausedOverlay } from "./components/paused";
 import { SteeringOverlay } from "./components/steering";
 import { DialogProvider, DialogStack, useDialog, useInputFocus } from "./context/DialogContext";
 import { CommandProvider, useCommand, type CommandOption } from "./context/CommandContext";
-import { DialogSelect } from "./ui/DialogSelect";
+import { DialogSelect, type SelectOption } from "./ui/DialogSelect";
 import { DialogAlert } from "./ui/DialogAlert";
 import { keymap, matchesKeybind } from "./lib/keymap";
 import type { LoopState, LoopOptions, PersistedState } from "./state";
+import { detectInstalledTerminals, type KnownTerminal } from "./lib/terminal-launcher";
 import { colors } from "./components/colors";
 import { calculateEta } from "./util/time";
 import { log } from "./util/log";
@@ -349,7 +350,71 @@ function AppContent(props: AppContentProps) {
         },
       },
     ]);
+
+    // Register "Choose default terminal" action
+    command.register("terminalConfig", () => [
+      {
+        title: "Choose default terminal",
+        value: "terminalConfig",
+        description: "Select terminal for launching attach sessions",
+        keybind: keymap.terminalConfig.label,
+        onSelect: () => {
+          showTerminalConfigDialog();
+        },
+      },
+    ]);
   });
+
+  /**
+   * Show terminal configuration dialog.
+   * Lists detected terminals and allows user to select one.
+   */
+  const showTerminalConfigDialog = async () => {
+    // Detect installed terminals
+    const terminals = await detectInstalledTerminals();
+
+    if (terminals.length === 0) {
+      dialog.show(() => (
+        <DialogAlert
+          title="No Terminals Found"
+          message="No supported terminal emulators were detected on your system."
+          variant="warning"
+        />
+      ));
+      return;
+    }
+
+    // Convert terminals to SelectOption format
+    const options: SelectOption[] = terminals.map((terminal: KnownTerminal) => ({
+      title: terminal.name,
+      value: terminal.command,
+      description: `Command: ${terminal.command}`,
+    }));
+
+    dialog.show(() => (
+      <DialogSelect
+        title="Choose Default Terminal"
+        placeholder="Type to search terminals..."
+        options={options}
+        onSelect={(opt) => {
+          const selected = terminals.find((t: KnownTerminal) => t.command === opt.value);
+          if (selected) {
+            // TODO: Save to config when config persistence is implemented
+            log("app", "Terminal selected", { terminal: selected.name });
+            dialog.show(() => (
+              <DialogAlert
+                title="Terminal Selected"
+                message={`Selected: ${selected.name}\n\nNote: Config persistence not yet implemented.`}
+                variant="info"
+              />
+            ));
+          }
+        }}
+        onCancel={() => {}}
+        borderColor={colors.cyan}
+      />
+    ));
+  };
 
   /**
    * Detect if the `:` (colon) key was pressed.

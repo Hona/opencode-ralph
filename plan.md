@@ -232,7 +232,7 @@
 - [x] Define `toggleTasks` keybind in keymap
 - [x] Define `togglePause` keybind in keymap
 - [x] Register "Copy attach command" action
-- [ ] Register "Choose default terminal" action
+- [x] Register "Choose default terminal" action
 - [ ] Register "Toggle tasks panel" action
 - [x] Register "Pause/Resume" action
 
