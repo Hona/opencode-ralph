@@ -6,7 +6,7 @@
 
 #### Session Lifecycle Callbacks
 - [x] Add `SessionInfo` type to `src/state.ts` with `sessionId`, `serverUrl`, `attached`, `sendMessage` fields
-- [ ] Add `onSessionCreated` callback type to `LoopCallbacks` in `src/loop.ts`
+- [x] Add `onSessionCreated` callback type to `LoopCallbacks` in `src/loop.ts`
 - [ ] Add `onSessionEnded` callback type to `LoopCallbacks` in `src/loop.ts`
 - [ ] Add `sessionId` field to `LoopState` in `src/state.ts`
 - [ ] Add `serverUrl` field to `LoopState` in `src/state.ts`

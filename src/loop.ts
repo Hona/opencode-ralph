@@ -1,5 +1,5 @@
 import { createOpencodeServer, createOpencodeClient } from "@opencode-ai/sdk";
-import type { LoopOptions, PersistedState, ToolEvent } from "./state.js";
+import type { LoopOptions, PersistedState, SessionInfo, ToolEvent } from "./state.js";
 import { getHeadHash, getCommitsSince, getDiffStats } from "./git.js";
 import { parsePlan } from "./plan.js";
 import { log } from "./util/log.js";
@@ -228,6 +228,7 @@ export type LoopCallbacks = {
   onComplete: () => void;
   onError: (error: string) => void;
   onIdleChanged: (isIdle: boolean) => void;
+  onSessionCreated?: (session: SessionInfo) => void;
 };
 
 export async function runLoop(
