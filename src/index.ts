@@ -16,6 +16,7 @@ interface RalphConfig {
   model?: string;
   plan?: string;
   prompt?: string;
+  promptFile?: string;
   server?: string;
   serverTimeout?: number;
 }
@@ -148,6 +149,11 @@ async function main() {
       type: "string",
       description: "Custom prompt template (use {plan} as placeholder)",
       default: globalConfig.prompt,
+    })
+    .option("prompt-file", {
+      type: "string",
+      description: "Path to prompt file",
+      default: globalConfig.promptFile || ".ralph-prompt.md",
     })
     .option("reset", {
       alias: "r",

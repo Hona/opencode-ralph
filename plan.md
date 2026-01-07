@@ -52,9 +52,9 @@
 ### 1.2 Custom Prompt File Support
 
 #### CLI Option
-- [ ] Add `--prompt-file` option to yargs in `src/index.ts`
-- [ ] Set default value to `.ralph-prompt.md`
-- [ ] Add description: "Path to prompt file"
+- [x] Add `--prompt-file` option to yargs in `src/index.ts`
+- [x] Set default value to `.ralph-prompt.md`
+- [x] Add description: "Path to prompt file"
 
 #### State and Config
 - [ ] Add `promptFile` field to `LoopOptions` in `src/state.ts`
