@@ -11,6 +11,7 @@ import { initLog, log } from "./util/log";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
+import pkg from "../package.json";
 
 interface RalphConfig {
   model?: string;
@@ -186,9 +187,9 @@ async function main() {
       description: "Debug mode - manual session creation",
       default: globalConfig.debug ?? false,
     })
-    .help()
-    .alias("h", "help")
-    .version("1.0.0")
+    .help("h")
+    .version(pkg.version)
+    .alias("v", "version")
     .strict()
     .parse();
 
