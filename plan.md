@@ -685,7 +685,7 @@
 - [x] Verify command palette shows/filters commands
 - [x] Verify terminal launches with correct command
 - [x] Verify debug mode creates manual sessions
-- [ ] Verify tasks panel shows all tasks
+- [x] Verify tasks panel shows all tasks
 - [ ] Verify themes apply correctly
 - [ ] Verify tokens accumulate properly
 - [ ] Verify toasts appear and dismiss
