@@ -686,7 +686,7 @@
 - [x] Verify terminal launches with correct command
 - [x] Verify debug mode creates manual sessions
 - [x] Verify tasks panel shows all tasks
-- [ ] Verify themes apply correctly
+- [x] Verify themes apply correctly
 - [ ] Verify tokens accumulate properly
 - [ ] Verify toasts appear and dismiss
 - [ ] Verify clipboard copies on Linux/macOS

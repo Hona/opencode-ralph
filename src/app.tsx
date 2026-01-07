@@ -9,6 +9,7 @@ import { SteeringOverlay } from "./components/steering";
 import { DialogProvider, DialogStack, useDialog, useInputFocus } from "./context/DialogContext";
 import { CommandProvider, useCommand, type CommandOption } from "./context/CommandContext";
 import { ToastProvider, useToast } from "./context/ToastContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import { ToastStack } from "./components/toast";
 import { DialogSelect, type SelectOption } from "./ui/DialogSelect";
 import { DialogAlert } from "./ui/DialogAlert";
@@ -293,32 +294,34 @@ export function App(props: AppProps) {
   };
 
   return (
-    <ToastProvider>
-      <DialogProvider>
-        <CommandProvider onShowPalette={showCommandPalette}>
-          <AppContent
-            state={state}
-            setState={setState}
-            options={props.options}
-            commandMode={commandMode}
-            setCommandMode={setCommandMode}
-            setCommandInput={setCommandInput}
-            togglePause={togglePause}
-            renderer={renderer}
-            onQuit={props.onQuit}
-            onKeyboardEvent={props.onKeyboardEvent}
-            keyboardEventNotified={keyboardEventNotified}
-            setKeyboardEventNotified={(v: boolean) => { keyboardEventNotified = v; }}
-            showTasks={showTasks}
-            setShowTasks={setShowTasks}
-            tasks={tasks}
-            refreshTasks={refreshTasks}
-            loopStore={loopStore}
-            loopStats={loopStats}
-          />
-        </CommandProvider>
-      </DialogProvider>
-    </ToastProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <DialogProvider>
+          <CommandProvider onShowPalette={showCommandPalette}>
+            <AppContent
+              state={state}
+              setState={setState}
+              options={props.options}
+              commandMode={commandMode}
+              setCommandMode={setCommandMode}
+              setCommandInput={setCommandInput}
+              togglePause={togglePause}
+              renderer={renderer}
+              onQuit={props.onQuit}
+              onKeyboardEvent={props.onKeyboardEvent}
+              keyboardEventNotified={keyboardEventNotified}
+              setKeyboardEventNotified={(v: boolean) => { keyboardEventNotified = v; }}
+              showTasks={showTasks}
+              setShowTasks={setShowTasks}
+              tasks={tasks}
+              refreshTasks={refreshTasks}
+              loopStore={loopStore}
+              loopStats={loopStats}
+            />
+          </CommandProvider>
+        </DialogProvider>
+      </ToastProvider>
+    </ThemeProvider>
   );
 }
 
