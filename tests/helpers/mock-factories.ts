@@ -55,6 +55,8 @@ export function createMockLoopOptions(
     planFile: "plan.md",
     model: "anthropic/claude-sonnet-4",
     prompt: "READ all of {plan}. Pick ONE task. Complete it. Commit change.",
+    serverUrl: undefined,
+    serverTimeoutMs: undefined,
     ...overrides,
   };
 }

@@ -26,10 +26,10 @@ Allow Ralph to connect to an existing/running OpenCode server via `--server` URL
 
 ### 1.3 Update mock factories for tests
 
-- [ ] **1.3.1** Open `tests/helpers/mock-factories.ts`
-- [ ] **1.3.2** Locate `createMockLoopOptions()` function at lines 51-60
-- [ ] **1.3.3** Add `serverUrl` and `serverTimeoutMs` to the returned object with `undefined` defaults
-- [ ] **1.3.4** Run `bun test` to verify existing tests still pass
+- [x] **1.3.1** Open `tests/helpers/mock-factories.ts`
+- [x] **1.3.2** Locate `createMockLoopOptions()` function at lines 51-60
+- [x] **1.3.3** Add `serverUrl` and `serverTimeoutMs` to the returned object with `undefined` defaults
+- [x] **1.3.4** Run `bun test` to verify existing tests still pass
 
 ---
 
