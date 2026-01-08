@@ -12,10 +12,24 @@ import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 
+// Version is injected at build time via Bun's define
+declare const RALPH_VERSION: string | undefined;
+
+// In dev mode, fall back to reading from package.json
+const version: string =
+  typeof RALPH_VERSION !== "undefined"
+    ? RALPH_VERSION
+    : JSON.parse(readFileSync(join(import.meta.dir, "../package.json"), "utf-8")).version + "-dev";
+
 interface RalphConfig {
   model?: string;
   plan?: string;
   prompt?: string;
+  promptFile?: string;
+  server?: string;
+  serverTimeout?: number;
+  agent?: string;
+  debug?: boolean;
 }
 
 function loadGlobalConfig(): RalphConfig {
@@ -147,15 +161,43 @@ async function main() {
       description: "Custom prompt template (use {plan} as placeholder)",
       default: globalConfig.prompt,
     })
+    .option("prompt-file", {
+      type: "string",
+      description: "Path to prompt file",
+      default: globalConfig.promptFile || ".ralph-prompt.md",
+    })
     .option("reset", {
       alias: "r",
       type: "boolean",
       description: "Reset state and start fresh",
       default: false,
     })
-    .help()
-    .alias("h", "help")
-    .version(false)
+    .option("server", {
+      alias: "s",
+      type: "string",
+      description: "URL of existing OpenCode server to connect to",
+      default: globalConfig.server,
+    })
+    .option("server-timeout", {
+      type: "number",
+      description: "Health check timeout in ms for external server",
+      default: globalConfig.serverTimeout ?? 5000,
+    })
+    .option("agent", {
+      alias: "a",
+      type: "string",
+      description: "Agent to use (e.g., 'build', 'plan', 'general')",
+      default: globalConfig.agent,
+    })
+    .option("debug", {
+      alias: "d",
+      type: "boolean",
+      description: "Debug mode - manual session creation",
+      default: globalConfig.debug ?? false,
+    })
+    .help("h")
+    .version(version)
+    .alias("v", "version")
     .strict()
     .parse();
 
@@ -229,6 +271,11 @@ async function main() {
       planFile: argv.plan,
       model: argv.model,
       prompt: argv.prompt || "",
+      promptFile: argv.promptFile,
+      serverUrl: argv.server,
+      serverTimeoutMs: argv.serverTimeout,
+      agent: argv.agent,
+      debug: argv.debug,
     };
 
 // Create abort controller for cancellation
@@ -240,12 +287,23 @@ async function main() {
 
     // Task 4.3: Declare fallback timeout variable early so cleanup() can reference it
     let fallbackTimeout: ReturnType<typeof setTimeout> | undefined;
+    // Phase 3.3: Declare fallback raw mode flag early so cleanup() can reference it
+    let fallbackRawModeEnabled = false;
 
     // Cleanup function for graceful shutdown
     async function cleanup() {
       log("main", "cleanup() called");
       clearInterval(keepaliveInterval);
       if (fallbackTimeout) clearTimeout(fallbackTimeout); // Task 4.3: Clean up fallback timeout
+      // Phase 3.3: Restore raw mode if fallback enabled it
+      if (fallbackRawModeEnabled && process.stdin.isTTY) {
+        try {
+          process.stdin.setRawMode(false);
+          log("main", "Raw mode restored to normal during cleanup");
+        } catch {
+          // Ignore errors - stdin may already be closed
+        }
+      }
       abortController.abort();
       await releaseLock();
       log("main", "cleanup() done");
@@ -270,15 +328,38 @@ async function main() {
     // 1. No keyboard events received from OpenTUI after startup
     // 2. A timeout has elapsed (indicating OpenTUI may not be working)
     //
-    // Once OpenTUI keyboard events ARE received, the fallback is permanently disabled.
+    // Once OpenTUI keyboard events ARE received, the fallback is permanently disabled
+    // AND the stdin listener is removed to prevent any double-handling.
     let keyboardWorking = false;
     let fallbackEnabled = false;
+    let fallbackFirstKeyLogged = false; // Phase 1.2: Only log first fallback key to avoid spam
+    let fallbackStdinHandler: ((data: Buffer) => Promise<void>) | null = null;
     const KEYBOARD_FALLBACK_TIMEOUT_MS = 5000; // 5 seconds before enabling fallback
     
+    /**
+     * Permanently disable the fallback stdin handler.
+     * Called when OpenTUI keyboard is confirmed working.
+     */
+    const disableFallbackHandler = () => {
+      if (fallbackStdinHandler && fallbackEnabled) {
+        process.stdin.off("data", fallbackStdinHandler);
+        fallbackStdinHandler = null;
+        fallbackEnabled = false;
+        // Phase 3.3: Restore raw mode if we enabled it
+        if (fallbackRawModeEnabled && process.stdin.isTTY) {
+          process.stdin.setRawMode(false);
+          fallbackRawModeEnabled = false;
+          log("main", "Raw mode restored to normal");
+        }
+        log("main", "Fallback stdin handler removed - OpenTUI has exclusive keyboard control");
+      }
+    };
+    
     const onKeyboardEvent = () => {
-      // OpenTUI keyboard is working - disable any fallback
+      // OpenTUI keyboard is working - disable any fallback permanently
       keyboardWorking = true;
-      log("main", "OpenTUI keyboard confirmed working, fallback disabled");
+      log("main", "OpenTUI keyboard confirmed working, disabling fallback");
+      disableFallbackHandler();
     };
     
     // Set up a delayed fallback that only activates if keyboard isn't working
@@ -290,22 +371,31 @@ async function main() {
       
       // OpenTUI keyboard may not be working - enable fallback stdin handler
       fallbackEnabled = true;
-      log("main", "Enabling fallback stdin handler (OpenTUI keyboard not detected)");
+      log("main", "Enabling fallback stdin handler (OpenTUI keyboard not detected after 5s)");
       
       // Set stdin to raw mode for single-keypress detection
       if (process.stdin.isTTY) {
         process.stdin.setRawMode(true);
+        fallbackRawModeEnabled = true; // Phase 3.3: Track raw mode for cleanup
       }
       process.stdin.resume();
       
-      process.stdin.on("data", async (data: Buffer) => {
-        // If OpenTUI keyboard started working, ignore fallback
+      // Create and store the handler so we can remove it later
+      fallbackStdinHandler = async (data: Buffer) => {
+        // If OpenTUI keyboard started working, ignore this event
+        // (handler will be removed shortly by disableFallbackHandler)
         if (keyboardWorking) {
           return;
         }
         
         const char = data.toString();
-        log("main", "Fallback stdin received", { char: char.replace(/\x03/g, "^C") });
+        // Phase 1.2: Only log first fallback key to avoid spam
+        if (!fallbackFirstKeyLogged) {
+          fallbackFirstKeyLogged = true;
+          log("main", "First fallback stdin key event", { 
+            char: char.replace(/\x03/g, "^C"),
+          });
+        }
         
         // Handle 'q' for quit
         if (char === "q" || char === "Q") {
@@ -328,22 +418,30 @@ async function main() {
             await Bun.write(PAUSE_FILE, String(process.pid));
           }
         }
-      });
+      };
+      
+      process.stdin.on("data", fallbackStdinHandler);
     }, KEYBOARD_FALLBACK_TIMEOUT_MS);
 
     // Handle SIGINT (Ctrl+C) and SIGTERM signals for graceful shutdown
+    // NOTE: When stdin is in raw mode, Ctrl+C sends 0x03 character instead of SIGINT.
+    // SIGINT will still fire if something else sends the signal (e.g., kill -INT).
     process.on("SIGINT", async () => {
+      if (quitRequested) {
+        log("main", "SIGINT received but quit already requested, ignoring");
+        return;
+      }
       log("main", "SIGINT received");
-      await cleanup();
-      log("main", "SIGINT cleanup done, exiting");
-      process.exit(0);
+      await requestQuit("SIGINT");
     });
 
     process.on("SIGTERM", async () => {
+      if (quitRequested) {
+        log("main", "SIGTERM received but quit already requested, ignoring");
+        return;
+      }
       log("main", "SIGTERM received");
-      await cleanup();
-      log("main", "SIGTERM cleanup done, exiting");
-      process.exit(0);
+      await requestQuit("SIGTERM");
     });
 
 // Start the TUI app and get state setters
@@ -374,8 +472,33 @@ async function main() {
     }));
     log("main", "Initial stats loaded", { diff: initialDiff, commits: initialCommits });
 
+    // In debug mode, skip automatic loop start - set state to ready and wait
+    if (loopOptions.debug) {
+      log("main", "Debug mode: skipping automatic loop start, setting state to ready");
+      stateSetters.setState((prev) => ({
+        ...prev,
+        status: "ready",   // Ready status for debug mode
+        iteration: 0,      // No iteration running yet
+        isIdle: true,      // Waiting for user input
+      }));
+      // Don't start the loop - wait for user to manually create sessions
+      await exitPromise;
+      log("main", "Debug mode: exit received, cleaning up");
+      return;
+    }
+
+    // Start in ready state - create pause file and set initial state
+    // User must press 'p' to begin the loop
+    const PAUSE_FILE = ".ralph-pause";
+    await Bun.write(PAUSE_FILE, String(process.pid));
+    stateSetters.setState((prev) => ({
+      ...prev,
+      status: "ready",
+    }));
+    log("main", "Starting in ready state - press 'p' to begin");
+
     // Start the loop in parallel with callbacks wired to app state
-    log("main", "Starting loop");
+    log("main", "Starting loop (paused)");
     runLoop(loopOptions, stateToUse, {
       onIterationStart: (iteration) => {
         log("main", "onIterationStart", { iteration });
@@ -492,6 +615,69 @@ async function main() {
           ...prev,
           isIdle,
         }));
+      },
+      onSessionCreated: (session) => {
+        // Store session info in state for steering mode
+        // Reset tokens to zero for new session (fresh token tracking per session)
+        stateSetters.setState((prev) => ({
+          ...prev,
+          sessionId: session.sessionId,
+          serverUrl: session.serverUrl,
+          attached: session.attached,
+          tokens: undefined, // Reset token counters on session start
+        }));
+        // Store sendMessage function for steering overlay
+        stateSetters.setSendMessage(session.sendMessage);
+      },
+      onSessionEnded: (_sessionId) => {
+        // Clear session fields when session ends
+        // Also clear token display when no active session
+        stateSetters.setState((prev) => ({
+          ...prev,
+          sessionId: undefined,
+          serverUrl: undefined,
+          attached: undefined,
+          tokens: undefined, // Clear token display when session ends
+        }));
+        // Clear sendMessage function
+        stateSetters.setSendMessage(null);
+      },
+      onBackoff: (backoffMs, retryAt) => {
+        // Update state with backoff info for retry countdown display
+        stateSetters.setState((prev) => ({
+          ...prev,
+          errorBackoffMs: backoffMs,
+          errorRetryAt: retryAt,
+        }));
+      },
+      onBackoffCleared: () => {
+        // Clear backoff fields when retry begins
+        stateSetters.setState((prev) => ({
+          ...prev,
+          errorBackoffMs: undefined,
+          errorRetryAt: undefined,
+        }));
+      },
+      onTokens: (tokens) => {
+        // Accumulate token usage for footer display
+        batchedUpdater.queueUpdate((prev) => {
+          const existing = prev.tokens || {
+            input: 0,
+            output: 0,
+            reasoning: 0,
+            cacheRead: 0,
+            cacheWrite: 0,
+          };
+          return {
+            tokens: {
+              input: existing.input + tokens.input,
+              output: existing.output + tokens.output,
+              reasoning: existing.reasoning + tokens.reasoning,
+              cacheRead: existing.cacheRead + tokens.cacheRead,
+              cacheWrite: existing.cacheWrite + tokens.cacheWrite,
+            },
+          };
+        });
       },
     }, abortController.signal).catch((error) => {
       log("main", "Loop error", { error: error instanceof Error ? error.message : String(error) });
