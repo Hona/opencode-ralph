@@ -18,7 +18,7 @@ export type TokenUsage = {
 };
 
 export type LoopState = {
-  status: "starting" | "running" | "paused" | "complete" | "error" | "idle";
+  status: "starting" | "running" | "paused" | "complete" | "error" | "ready";
   iteration: number;
   tasksComplete: number;
   totalTasks: number;

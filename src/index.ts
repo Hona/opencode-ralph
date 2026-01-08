@@ -464,12 +464,12 @@ async function main() {
     }));
     log("main", "Initial stats loaded", { diff: initialDiff, commits: initialCommits });
 
-    // In debug mode, skip automatic loop start - set state to idle and wait
+    // In debug mode, skip automatic loop start - set state to ready and wait
     if (loopOptions.debug) {
-      log("main", "Debug mode: skipping automatic loop start, setting state to idle");
+      log("main", "Debug mode: skipping automatic loop start, setting state to ready");
       stateSetters.setState((prev) => ({
         ...prev,
-        status: "idle",    // Idle status for debug mode
+        status: "ready",   // Ready status for debug mode
         iteration: 0,      // No iteration running yet
         isIdle: true,      // Waiting for user input
       }));
@@ -479,15 +479,15 @@ async function main() {
       return;
     }
 
-    // Start paused - create pause file and set initial state to paused
+    // Start in ready state - create pause file and set initial state
     // User must press 'p' to begin the loop
     const PAUSE_FILE = ".ralph-pause";
     await Bun.write(PAUSE_FILE, String(process.pid));
     stateSetters.setState((prev) => ({
       ...prev,
-      status: "paused",
+      status: "ready",
     }));
-    log("main", "Starting in paused state - press 'p' to begin");
+    log("main", "Starting in ready state - press 'p' to begin");
 
     // Start the loop in parallel with callbacks wired to app state
     log("main", "Starting loop (paused)");

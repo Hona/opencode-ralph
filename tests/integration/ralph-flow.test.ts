@@ -414,7 +414,7 @@ describe("ralph flow integration", () => {
     expect(doneFileExists).toBe(false);
   });
 
-  it("should call onPause and onResume when .ralph-pause file is created and removed", async () => {
+  it("should call onResume (but not onPause) when starting with .ralph-pause file then removing it", async () => {
     const options: LoopOptions = {
       planFile: testPlanFile,
       model: "anthropic/claude-sonnet-4",
@@ -435,6 +435,8 @@ describe("ralph flow integration", () => {
     cleanupFiles.push(".ralph-done");
 
     // Create .ralph-pause file before starting the loop
+    // When starting with pause file already present, onPause should NOT be called
+    // (we start in paused/"ready" state, not transition to it)
     await Bun.write(".ralph-pause", "");
 
     // Schedule removal of .ralph-pause after the first pause check cycle (loop sleeps 1000ms when paused)
@@ -453,15 +455,12 @@ describe("ralph flow integration", () => {
 
     await runLoop(options, persistedState, callbacks, controller.signal);
 
-    // Verify onPause was called
-    expect(callbackOrder).toContain("onPause");
+    // onPause should NOT be called when starting with pause file already present
+    // (the loop initializes isPaused=true when file exists at startup)
+    expect(callbackOrder).not.toContain("onPause");
 
-    // Verify onResume was called after onPause
-    const pauseIndex = callbackOrder.indexOf("onPause");
-    const resumeIndex = callbackOrder.indexOf("onResume");
-    expect(pauseIndex).toBeGreaterThan(-1);
-    expect(resumeIndex).toBeGreaterThan(-1);
-    expect(resumeIndex).toBeGreaterThan(pauseIndex);
+    // Verify onResume was called when pause file was removed
+    expect(callbackOrder).toContain("onResume");
 
     // Verify onComplete was called (due to .ralph-done file)
     expect(callbackOrder).toContain("onComplete");

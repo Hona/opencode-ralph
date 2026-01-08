@@ -427,7 +427,10 @@ export async function runLoop(
 
     // Initialize iteration counter from persisted state
     let iteration = persistedState.iterationTimes.length;
-    let isPaused = false;
+    // Check if pause file exists at startup - if so, start in paused state
+    // to avoid calling onPause() callback (which would override "ready" status)
+    const pauseFileExistsAtStart = await Bun.file(".ralph-pause").exists();
+    let isPaused = pauseFileExistsAtStart;
     let previousCommitCount = await getCommitsSince(persistedState.initialCommitHash);
     
     // Error tracking for exponential backoff (local, not persisted)

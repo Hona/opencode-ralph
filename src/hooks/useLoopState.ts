@@ -79,7 +79,7 @@ export function loopStateReducer(state: LoopState, action: LoopAction): LoopStat
       return { ...state, status: "error", error: action.error };
 
     case "CLEAR_ERROR":
-      return { ...state, status: "idle", error: undefined };
+      return { ...state, status: "ready", error: undefined };
 
     case "SET_IDLE":
       return { ...state, isIdle: action.isIdle };
