@@ -1,0 +1,233 @@
+{
+  "$schema": "https://opencode.ai/theme.json",
+  "defs": {
+    "latteRosewater": "#dc8a78",
+    "latteFlamingo": "#dd7878",
+    "lattePink": "#ea76cb",
+    "latteMauve": "#8839ef",
+    "latteRed": "#d20f39",
+    "latteMaroon": "#e64553",
+    "lattePeach": "#fe640b",
+    "latteYellow": "#df8e1d",
+    "latteGreen": "#40a02b",
+    "latteTeal": "#179299",
+    "latteSky": "#04a5e5",
+    "latteSapphire": "#209fb5",
+    "latteBlue": "#1e66f5",
+    "latteLavender": "#7287fd",
+    "latteText": "#4c4f69",
+    "latteSubtext1": "#5c5f77",
+    "latteSubtext0": "#6c6f85",
+    "latteOverlay2": "#7c7f93",
+    "latteOverlay1": "#8c8fa1",
+    "latteOverlay0": "#9ca0b0",
+    "latteSurface2": "#acb0be",
+    "latteSurface1": "#bcc0cc",
+    "latteSurface0": "#ccd0da",
+    "latteBase": "#eff1f5",
+    "latteMantle": "#e6e9ef",
+    "latteCrust": "#dce0e8"
+  },
+  "theme": {
+    "primary": {
+      "dark": "latteBlue",
+      "light": "latteBlue"
+    },
+    "secondary": {
+      "dark": "latteMauve",
+      "light": "latteMauve"
+    },
+    "accent": {
+      "dark": "lattePink",
+      "light": "lattePink"
+    },
+    "error": {
+      "dark": "latteRed",
+      "light": "latteRed"
+    },
+    "warning": {
+      "dark": "latteYellow",
+      "light": "latteYellow"
+    },
+    "success": {
+      "dark": "latteGreen",
+      "light": "latteGreen"
+    },
+    "info": {
+      "dark": "latteTeal",
+      "light": "latteTeal"
+    },
+    "text": {
+      "dark": "latteText",
+      "light": "latteText"
+    },
+    "textMuted": {
+      "dark": "latteSubtext1",
+      "light": "latteSubtext1"
+    },
+    "background": {
+      "dark": "latteBase",
+      "light": "latteBase"
+    },
+    "backgroundPanel": {
+      "dark": "latteMantle",
+      "light": "latteMantle"
+    },
+    "backgroundElement": {
+      "dark": "latteCrust",
+      "light": "latteCrust"
+    },
+    "border": {
+      "dark": "latteSurface0",
+      "light": "latteSurface0"
+    },
+    "borderActive": {
+      "dark": "latteSurface1",
+      "light": "latteSurface1"
+    },
+    "borderSubtle": {
+      "dark": "latteSurface2",
+      "light": "latteSurface2"
+    },
+    "diffAdded": {
+      "dark": "latteGreen",
+      "light": "latteGreen"
+    },
+    "diffRemoved": {
+      "dark": "latteRed",
+      "light": "latteRed"
+    },
+    "diffContext": {
+      "dark": "latteOverlay2",
+      "light": "latteOverlay2"
+    },
+    "diffHunkHeader": {
+      "dark": "lattePeach",
+      "light": "lattePeach"
+    },
+    "diffHighlightAdded": {
+      "dark": "latteGreen",
+      "light": "latteGreen"
+    },
+    "diffHighlightRemoved": {
+      "dark": "latteRed",
+      "light": "latteRed"
+    },
+    "diffAddedBg": {
+      "dark": "#cde8c6",
+      "light": "#cde8c6"
+    },
+    "diffRemovedBg": {
+      "dark": "#f5c6cb",
+      "light": "#f5c6cb"
+    },
+    "diffContextBg": {
+      "dark": "latteMantle",
+      "light": "latteMantle"
+    },
+    "diffLineNumber": {
+      "dark": "latteSurface1",
+      "light": "latteSurface1"
+    },
+    "diffAddedLineNumberBg": {
+      "dark": "#d8efd3",
+      "light": "#d8efd3"
+    },
+    "diffRemovedLineNumberBg": {
+      "dark": "#f9dde0",
+      "light": "#f9dde0"
+    },
+    "markdownText": {
+      "dark": "latteText",
+      "light": "latteText"
+    },
+    "markdownHeading": {
+      "dark": "latteMauve",
+      "light": "latteMauve"
+    },
+    "markdownLink": {
+      "dark": "latteBlue",
+      "light": "latteBlue"
+    },
+    "markdownLinkText": {
+      "dark": "latteSky",
+      "light": "latteSky"
+    },
+    "markdownCode": {
+      "dark": "latteGreen",
+      "light": "latteGreen"
+    },
+    "markdownBlockQuote": {
+      "dark": "latteYellow",
+      "light": "latteYellow"
+    },
+    "markdownEmph": {
+      "dark": "latteYellow",
+      "light": "latteYellow"
+    },
+    "markdownStrong": {
+      "dark": "lattePeach",
+      "light": "lattePeach"
+    },
+    "markdownHorizontalRule": {
+      "dark": "latteSubtext0",
+      "light": "latteSubtext0"
+    },
+    "markdownListItem": {
+      "dark": "latteBlue",
+      "light": "latteBlue"
+    },
+    "markdownListEnumeration": {
+      "dark": "latteSky",
+      "light": "latteSky"
+    },
+    "markdownImage": {
+      "dark": "latteBlue",
+      "light": "latteBlue"
+    },
+    "markdownImageText": {
+      "dark": "latteSky",
+      "light": "latteSky"
+    },
+    "markdownCodeBlock": {
+      "dark": "latteText",
+      "light": "latteText"
+    },
+    "syntaxComment": {
+      "dark": "latteOverlay2",
+      "light": "latteOverlay2"
+    },
+    "syntaxKeyword": {
+      "dark": "latteMauve",
+      "light": "latteMauve"
+    },
+    "syntaxFunction": {
+      "dark": "latteBlue",
+      "light": "latteBlue"
+    },
+    "syntaxVariable": {
+      "dark": "latteRed",
+      "light": "latteRed"
+    },
+    "syntaxString": {
+      "dark": "latteGreen",
+      "light": "latteGreen"
+    },
+    "syntaxNumber": {
+      "dark": "lattePeach",
+      "light": "lattePeach"
+    },
+    "syntaxType": {
+      "dark": "latteYellow",
+      "light": "latteYellow"
+    },
+    "syntaxOperator": {
+      "dark": "latteSky",
+      "light": "latteSky"
+    },
+    "syntaxPunctuation": {
+      "dark": "latteText",
+      "light": "latteText"
+    }
+  }
+}
