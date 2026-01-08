@@ -1,6 +1,6 @@
 {
   "name": "@hona/ralph-cli",
-  "version": "0.1.0",
+  "version": "1.0.5",
   "type": "module",
   "bin": {
     "ralph": "./bin/ralph"
@@ -19,6 +19,7 @@
     "@opencode-ai/sdk": "1.1.1",
     "@opentui/core": "0.1.68",
     "@opentui/solid": "0.1.68",
+    "fuzzysort": "^3.1.0",
     "solid-js": "^1.9.0",
     "yargs": "^18.0.0"
   },
