@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { extend } from "@opentui/core";
+import { extend } from "@opentui/solid";
 import { acquireLock, releaseLock } from "./lock";
 import { loadState, saveState, PersistedState, LoopOptions, trimEventsInPlace, LoopState } from "./state";
 import { confirm } from "./prompt";
