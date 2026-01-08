@@ -11,7 +11,9 @@ import { initLog, log } from "./util/log";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
-import pkg from "../package.json";
+// Version is injected at build time via Bun's define
+// @ts-expect-error - RALPH_VERSION is replaced at build time
+const version: string = RALPH_VERSION;
 
 interface RalphConfig {
   model?: string;
@@ -188,7 +190,7 @@ async function main() {
       default: globalConfig.debug ?? false,
     })
     .help("h")
-    .version(pkg.version)
+    .version(version)
     .alias("v", "version")
     .strict()
     .parse();
