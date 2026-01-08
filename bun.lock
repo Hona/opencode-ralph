@@ -9,6 +9,7 @@
         "@opentui/core": "0.1.68",
         "@opentui/solid": "0.1.68",
         "fuzzysort": "^3.1.0",
+        "ghostty-opentui": "1.3.11",
         "solid-js": "^1.9.0",
         "yargs": "^18.0.0",
       },
@@ -261,6 +262,8 @@
     "get-caller-file": ["get-caller-file@2.0.5", "", {}, "sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg=="],
 
     "get-east-asian-width": ["get-east-asian-width@1.4.0", "", {}, "sha512-QZjmEOC+IT1uk6Rx0sX22V6uHWVwbdbxf1faPqJ1QhLdGgsRGCZoyaQBm/piRdJy/D2um6hM1UP7ZEeQ4EkP+Q=="],
+
+    "ghostty-opentui": ["ghostty-opentui@1.3.11", "", { "dependencies": { "strip-ansi": "^7.1.2" }, "peerDependencies": { "@opentui/core": "*" }, "optionalPeers": ["@opentui/core"] }, "sha512-taKOhQD65dip/GBi2eDicyS6Z+m7T6CAWyUcFUVP3nX+JKTCiOwfncGqhnqtSa8VE3mG6VHaPzIimDVN7pdD6w=="],
 
     "gifwrap": ["gifwrap@0.10.1", "", { "dependencies": { "image-q": "^4.0.0", "omggif": "^1.0.10" } }, "sha512-2760b1vpJHNmLzZ/ubTtNnEx5WApN/PYWJvXvgS+tL1egTTthayFYIQQNi136FLEDcN/IyEY2EcGpIITD6eYUw=="],
 

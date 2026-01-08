@@ -28,6 +28,8 @@ export type LoopState = {
   events: ToolEvent[];
   error?: string;
   isIdle: boolean; // True when waiting for LLM response, false when tool events are arriving
+  adapterMode?: "sdk" | "pty";
+  terminalBuffer?: string;
   // Session lifecycle fields for steering mode
   sessionId?: string;
   serverUrl?: string;
@@ -95,6 +97,7 @@ export type LoopOptions = {
   promptFile?: string;
   serverUrl?: string;
   serverTimeoutMs?: number;
+  adapter?: string;
   agent?: string;
   debug?: boolean;
 };

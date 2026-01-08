@@ -1,10 +1,24 @@
 import { createOpencodeServer, createOpencodeClient } from "@opencode-ai/sdk";
+import { getAdapter, initializeAdapters } from "./adapters/registry.js";
 import type { LoopOptions, PersistedState, SessionInfo, ToolEvent } from "./state.js";
 import { getHeadHash, getCommitsSince, getDiffStats } from "./git.js";
 import { parsePlan } from "./plan.js";
 import { log } from "./util/log.js";
 
 const DEFAULT_PROMPT = `READ all of {plan}. Pick ONE task. If needed, verify via web/code search (this applies to packages, knowledge, deterministic data - NEVER VERIFY EDIT TOOLS WORKED OR THAT YOU COMMITED SOMETHING. BE PRAGMATIC ABOUT EVERYTHING). Complete task. Commit change (update the plan.md in the same commit). ONLY do one task unless GLARINGLY OBVIOUS steps should run together. Update {plan}. If you learn a critical operational detail, update AGENTS.md. When ALL tasks complete, create .ralph-done and exit. NEVER GIT PUSH. ONLY COMMIT.`;
+
+const steeringContext: string[] = [];
+
+export function addSteeringContext(message: string): void {
+  const trimmed = message.trim();
+  if (!trimmed) return;
+  steeringContext.push(trimmed);
+}
+
+function applySteeringContext(prompt: string): string {
+  if (steeringContext.length === 0) return prompt;
+  return `${prompt}\n\nAdditional context from user:\n${steeringContext.join("\n")}`;
+}
 
 const DEFAULT_PORT = 4190;
 
@@ -372,6 +386,7 @@ export type TokenUsage = {
 export type LoopCallbacks = {
   onIterationStart: (iteration: number) => void;
   onEvent: (event: ToolEvent) => void;
+  onRawOutput?: (data: string) => void;
   onIterationComplete: (
     iteration: number,
     duration: number,
@@ -385,6 +400,7 @@ export type LoopCallbacks = {
   onComplete: () => void;
   onError: (error: string) => void;
   onIdleChanged: (isIdle: boolean) => void;
+  onAdapterModeChanged?: (mode: "sdk" | "pty") => void;
   onSessionCreated?: (session: SessionInfo) => void;
   onSessionEnded?: (sessionId: string) => void;
   onBackoff?: (backoffMs: number, retryAt: number) => void;
@@ -400,6 +416,20 @@ export async function runLoop(
   signal: AbortSignal,
 ): Promise<void> {
   log("loop", "runLoop started", { planFile: options.planFile, model: options.model });
+
+  const adapterName = options.adapter || "opencode-server";
+  if (adapterName !== "opencode-server") {
+    try {
+      await runPtyLoop(adapterName, options, persistedState, callbacks, signal);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log("loop", "ERROR in runLoop (pty)", { error: errorMessage });
+      throw error;
+    }
+    return;
+  }
+
+  callbacks.onAdapterModeChanged?.("sdk");
   
   let server: { url: string; close(): void; attached: boolean } | null = null;
 
@@ -457,6 +487,7 @@ export async function runLoop(
           log("loop", "Pausing");
           callbacks.onPause();
         }
+        if (signal.aborted) break;
         await Bun.sleep(1000);
         continue;
       } else if (isPaused) {
@@ -480,6 +511,7 @@ export async function runLoop(
       const iterationStartTime = Date.now();
       log("loop", "Iteration starting", { iteration });
       callbacks.onIterationStart(iteration);
+      if (signal.aborted) break;
 
       try {
         // Add separator event for new iteration
@@ -510,7 +542,7 @@ export async function runLoop(
         }
 
         // Parse model and build prompt before session creation
-        const promptText = await buildPrompt(options);
+        const promptText = applySteeringContext(await buildPrompt(options));
         const { providerID, modelID } = parseModel(options.model);
 
         // Create session (10.13)
@@ -781,5 +813,181 @@ export async function runLoop(
       server.close();
     }
     log("loop", "Cleanup complete");
+  }
+}
+
+async function runPtyLoop(
+  adapterName: string,
+  options: LoopOptions,
+  persistedState: PersistedState,
+  callbacks: LoopCallbacks,
+  signal: AbortSignal,
+): Promise<void> {
+  await initializeAdapters();
+  const adapter = getAdapter(adapterName);
+  if (!adapter) {
+    const message = `Unknown adapter: ${adapterName}`;
+    callbacks.onError(message);
+    throw new Error(message);
+  }
+
+  const available = await adapter.isAvailable();
+  if (!available) {
+    const message = `Adapter "${adapter.displayName}" is not available`;
+    callbacks.onError(message);
+    throw new Error(message);
+  }
+
+  callbacks.onAdapterModeChanged?.("pty");
+
+  let iteration = persistedState.iterationTimes.length;
+  const pauseFileExistsAtStart = await Bun.file(".ralph-pause").exists();
+  let isPaused = pauseFileExistsAtStart;
+  let previousCommitCount = await getCommitsSince(persistedState.initialCommitHash);
+  let errorCount = 0;
+
+  while (!signal.aborted) {
+    const doneFile = Bun.file(".ralph-done");
+    if (await doneFile.exists()) {
+      log("loop", ".ralph-done found, completing");
+      await doneFile.delete();
+      callbacks.onComplete();
+      break;
+    }
+
+    const pauseFile = Bun.file(".ralph-pause");
+    if (await pauseFile.exists()) {
+      if (!isPaused) {
+        isPaused = true;
+        log("loop", "Pausing");
+        callbacks.onPause();
+      }
+      if (signal.aborted) break;
+      await Bun.sleep(1000);
+      continue;
+    } else if (isPaused) {
+      isPaused = false;
+      log("loop", "Resuming");
+      callbacks.onResume();
+    }
+
+    if (errorCount > 0) {
+      const backoffMs = calculateBackoffMs(errorCount);
+      const retryAt = Date.now() + backoffMs;
+      log("loop", "Error backoff", { errorCount, backoffMs, retryAt });
+      callbacks.onBackoff?.(backoffMs, retryAt);
+      await Bun.sleep(backoffMs);
+      callbacks.onBackoffCleared?.();
+    }
+
+    iteration++;
+    const iterationStartTime = Date.now();
+    log("loop", "Iteration starting", { iteration });
+    callbacks.onIterationStart(iteration);
+    if (signal.aborted) break;
+
+    try {
+      callbacks.onEvent({
+        iteration,
+        type: "separator",
+        text: `iteration ${iteration}`,
+        timestamp: iterationStartTime,
+      });
+
+      callbacks.onEvent({
+        iteration,
+        type: "spinner",
+        text: "looping...",
+        timestamp: iterationStartTime,
+      });
+
+      if (!options.debug) {
+        log("loop", "Parsing plan file");
+        const { done, total } = await parsePlan(options.planFile);
+        log("loop", "Plan parsed", { done, total });
+        callbacks.onTasksUpdated(done, total);
+      } else {
+        log("loop", "Debug mode: skipping plan file validation");
+      }
+
+      const promptText = applySteeringContext(await buildPrompt(options));
+
+      const session = await adapter.execute({
+        prompt: promptText,
+        model: options.model,
+        cwd: process.cwd(),
+        signal,
+        cols: process.stdout.columns || 80,
+        rows: process.stdout.rows || 24,
+      });
+
+      let sessionActive = true;
+      const sessionId = `pty-${Date.now()}`;
+      const sendMessage = async (message: string): Promise<void> => {
+        if (!sessionActive) {
+          throw new Error("No active session");
+        }
+        session.send(message);
+      };
+
+      callbacks.onSessionCreated?.({
+        sessionId,
+        serverUrl: "",
+        attached: false,
+        sendMessage,
+      });
+
+      callbacks.onIdleChanged(true);
+      let receivedOutput = false;
+
+      for await (const event of session.events) {
+        if (signal.aborted) break;
+
+        if (event.type === "output") {
+          if (!receivedOutput) {
+            receivedOutput = true;
+            callbacks.onIdleChanged(false);
+          }
+          callbacks.onRawOutput?.(event.data);
+        } else if (event.type === "exit") {
+          sessionActive = false;
+          callbacks.onSessionEnded?.(sessionId);
+          break;
+        } else if (event.type === "error") {
+          sessionActive = false;
+          callbacks.onSessionEnded?.(sessionId);
+          callbacks.onError(event.message);
+          throw new Error(event.message);
+        }
+      }
+
+      if (sessionActive) {
+        sessionActive = false;
+        callbacks.onSessionEnded?.(sessionId);
+      }
+
+      const iterationDuration = Date.now() - iterationStartTime;
+      const totalCommits = await getCommitsSince(persistedState.initialCommitHash);
+      const commitsThisIteration = totalCommits - previousCommitCount;
+      previousCommitCount = totalCommits;
+
+      const diffStats = await getDiffStats(persistedState.initialCommitHash);
+
+      log("loop", "Iteration completed", { iteration, duration: iterationDuration, commits: commitsThisIteration, diff: diffStats });
+      callbacks.onIterationComplete(iteration, iterationDuration, commitsThisIteration);
+      callbacks.onCommitsUpdated(totalCommits);
+      callbacks.onDiffUpdated(diffStats.added, diffStats.removed);
+
+      errorCount = 0;
+    } catch (iterationError) {
+      if (signal.aborted) {
+        throw iterationError;
+      }
+
+      const errorMessage = iterationError instanceof Error ? iterationError.message : String(iterationError);
+      errorCount++;
+      log("loop", "Error in iteration", { error: errorMessage, errorCount });
+      callbacks.onError(errorMessage);
+    }
   }
 }

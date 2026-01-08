@@ -1,16 +1,48 @@
 #!/usr/bin/env bun
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
+import { extend } from "@opentui/core";
 import { acquireLock, releaseLock } from "./lock";
-import { loadState, saveState, PersistedState, LoopOptions, trimEventsInPlace, LoopState, ToolEvent } from "./state";
+import { loadState, saveState, PersistedState, LoopOptions, trimEventsInPlace, LoopState } from "./state";
 import { confirm } from "./prompt";
 import { getHeadHash, getDiffStats, getCommitsSince } from "./git";
 import { startApp } from "./app";
 import { runLoop } from "./loop";
+import { runHeadlessMode } from "./headless";
 import { initLog, log } from "./util/log";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
+
+async function registerGhosttyTerminal(): Promise<void> {
+  try {
+    const module = await import("ghostty-opentui/terminal-buffer");
+    const GhosttyTerminalRenderable = module.GhosttyTerminalRenderable;
+    extend({ "ghostty-terminal": GhosttyTerminalRenderable });
+  } catch (error) {
+    throw new Error(`ghostty-opentui not available: ${String(error)}`);
+  }
+}
+
+function assertPtySupport(): void {
+  const bunVersion = process.versions.bun;
+  if (!bunVersion) return;
+
+  const required = process.platform === "win32" ? "1.1.0" : "1.0.0";
+  if (!isVersionAtLeast(bunVersion, required)) {
+    throw new Error(`Bun ${required}+ is required for PTY adapters (detected ${bunVersion}).`);
+  }
+}
+
+function isVersionAtLeast(current: string, required: string): boolean {
+  const parse = (value: string) => value.split(".").map((part) => Number(part.replace(/\D/g, "")));
+  const [cMajor = 0, cMinor = 0, cPatch = 0] = parse(current);
+  const [rMajor = 0, rMinor = 0, rPatch = 0] = parse(required);
+
+  if (cMajor !== rMajor) return cMajor > rMajor;
+  if (cMinor !== rMinor) return cMinor > rMinor;
+  return cPatch >= rPatch;
+}
 
 // Version is injected at build time via Bun's define
 declare const RALPH_VERSION: string | undefined;
@@ -22,6 +54,7 @@ const version: string =
     : JSON.parse(readFileSync(join(import.meta.dir, "../package.json"), "utf-8")).version + "-dev";
 
 interface RalphConfig {
+  adapter?: string;
   model?: string;
   plan?: string;
   prompt?: string;
@@ -29,6 +62,13 @@ interface RalphConfig {
   server?: string;
   serverTimeout?: number;
   agent?: string;
+  headless?: boolean;
+  format?: string;
+  timestamps?: boolean;
+  yes?: boolean;
+  autoReset?: boolean;
+  maxIterations?: number;
+  maxTime?: number;
   debug?: boolean;
 }
 
@@ -144,11 +184,22 @@ async function main() {
   const argv = await yargs(hideBin(process.argv))
     .scriptName("ralph")
     .usage("$0 [options]")
+    .option("headless", {
+      alias: "H",
+      type: "boolean",
+      description: "Run without the TUI (CI-friendly output)",
+      default: globalConfig.headless ?? false,
+    })
     .option("plan", {
       alias: "p",
       type: "string",
       description: "Path to the plan file",
       default: globalConfig.plan || "plan.md",
+    })
+    .option("adapter", {
+      type: "string",
+      description: "Adapter to use (opencode-server, opencode-run, codex)",
+      default: globalConfig.adapter || "opencode-server",
     })
     .option("model", {
       alias: "m",
@@ -171,6 +222,37 @@ async function main() {
       type: "boolean",
       description: "Reset state and start fresh",
       default: false,
+    })
+    .option("yes", {
+      type: "boolean",
+      description: "Auto-confirm prompts",
+      default: globalConfig.yes ?? false,
+    })
+    .option("auto-reset", {
+      type: "boolean",
+      description: "Auto-reset when prompts cannot be shown (use --no-auto-reset to disable)",
+      default: globalConfig.autoReset ?? true,
+    })
+    .option("format", {
+      type: "string",
+      description: "Headless output format (text, jsonl, json)",
+      choices: ["text", "jsonl", "json"],
+      default: globalConfig.format || "text",
+    })
+    .option("timestamps", {
+      type: "boolean",
+      description: "Include timestamps in headless output",
+      default: globalConfig.timestamps ?? false,
+    })
+    .option("max-iterations", {
+      type: "number",
+      description: "Maximum iterations before aborting (headless)",
+      default: globalConfig.maxIterations,
+    })
+    .option("max-time", {
+      type: "number",
+      description: "Maximum time in seconds before aborting (headless)",
+      default: globalConfig.maxTime,
     })
     .option("server", {
       alias: "s",
@@ -205,8 +287,11 @@ async function main() {
   const lockAcquired = await acquireLock();
   if (!lockAcquired) {
     console.error("Another ralph instance is running");
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
+
+  let exitCode = 0;
 
   try {
     // Load existing state if present
@@ -219,12 +304,32 @@ async function main() {
       console.log("No existing state found, will create fresh state");
     }
 
+    const autoYes = argv.yes || argv.headless;
+    const canPrompt = process.stdin.isTTY && !autoYes;
+
     // Determine the state to use after confirmation prompts
     let stateToUse: PersistedState | null = null;
     let shouldReset = argv.reset;
 
     if (existingState && !shouldReset) {
-      if (existingState.planFile === argv.plan) {
+      const samePlan = existingState.planFile === argv.plan;
+
+      if (autoYes) {
+        if (samePlan) {
+          stateToUse = existingState;
+        } else {
+          shouldReset = true;
+        }
+      } else if (!canPrompt) {
+        if (argv.autoReset) {
+          console.log("No TTY available for prompt; auto-resetting.");
+          shouldReset = true;
+        } else {
+          console.error("No TTY available for prompt and --no-auto-reset set. Exiting.");
+          exitCode = 2;
+          return;
+        }
+      } else if (samePlan) {
         // Same plan file - ask to continue
         const continueRun = await confirm("Continue previous run?");
         if (continueRun) {
@@ -240,8 +345,7 @@ async function main() {
         } else {
           // User chose not to reset - exit gracefully
           console.log("Exiting without changes.");
-          await releaseLock();
-          process.exit(0);
+          return;
         }
       }
     }
@@ -274,9 +378,45 @@ async function main() {
       promptFile: argv.promptFile,
       serverUrl: argv.server,
       serverTimeoutMs: argv.serverTimeout,
+      adapter: argv.adapter,
       agent: argv.agent,
       debug: argv.debug,
     };
+
+    let adapterMode: "sdk" | "pty" =
+      loopOptions.adapter && loopOptions.adapter !== "opencode-server" ? "pty" : "sdk";
+
+    if (adapterMode === "pty") {
+      try {
+        assertPtySupport();
+      } catch (error) {
+        exitCode = 1;
+        console.error(error instanceof Error ? error.message : String(error));
+        return;
+      }
+    }
+
+    if (argv.headless) {
+      exitCode = await runHeadlessMode({
+        loopOptions,
+        persistedState: stateToUse,
+        format: argv.format,
+        timestamps: argv.timestamps,
+        maxIterations: argv.maxIterations,
+        maxTime: argv.maxTime,
+      });
+      return;
+    }
+
+    if (adapterMode === "pty") {
+      try {
+        await registerGhosttyTerminal();
+      } catch (error) {
+        exitCode = 1;
+        console.error(error instanceof Error ? error.message : String(error));
+        return;
+      }
+    }
 
 // Create abort controller for cancellation
     const abortController = new AbortController();
@@ -460,6 +600,12 @@ async function main() {
     // Create batched updater for coalescing rapid state changes
     // Use 100ms debounce for better batching during high event throughput
     const batchedUpdater = createBatchStateUpdater(stateSetters.setState, 100);
+    const MAX_TERMINAL_BUFFER = 20000;
+
+    stateSetters.setState((prev) => ({
+      ...prev,
+      adapterMode,
+    }));
 
     // Fetch initial diff stats and commits on resume
     const initialDiff = await getDiffStats(stateToUse.initialCommitHash);
@@ -531,6 +677,16 @@ async function main() {
           }
           trimEventsInPlace(prev.events);
           return { events: prev.events };
+        });
+      },
+      onRawOutput: (data) => {
+        batchedUpdater.queueUpdate((prev) => {
+          const existing = prev.terminalBuffer || "";
+          let next = existing + data;
+          if (next.length > MAX_TERMINAL_BUFFER) {
+            next = next.slice(-MAX_TERMINAL_BUFFER);
+          }
+          return { terminalBuffer: next };
         });
       },
       onIterationComplete: (iteration, duration, commits) => {
@@ -619,11 +775,12 @@ async function main() {
       onSessionCreated: (session) => {
         // Store session info in state for steering mode
         // Reset tokens to zero for new session (fresh token tracking per session)
+        const isPty = adapterMode === "pty";
         stateSetters.setState((prev) => ({
           ...prev,
-          sessionId: session.sessionId,
-          serverUrl: session.serverUrl,
-          attached: session.attached,
+          sessionId: isPty ? undefined : session.sessionId,
+          serverUrl: isPty ? undefined : session.serverUrl,
+          attached: isPty ? undefined : session.attached,
           tokens: undefined, // Reset token counters on session start
         }));
         // Store sendMessage function for steering overlay
@@ -679,6 +836,14 @@ async function main() {
           };
         });
       },
+      onAdapterModeChanged: (mode) => {
+        adapterMode = mode;
+        stateSetters.setState((prev) => ({
+          ...prev,
+          adapterMode: mode,
+          terminalBuffer: mode === "pty" ? "" : prev.terminalBuffer,
+        }));
+      },
     }, abortController.signal).catch((error) => {
       log("main", "Loop error", { error: error instanceof Error ? error.message : String(error) });
       console.error("Loop error:", error);
@@ -688,19 +853,20 @@ async function main() {
     log("main", "Waiting for exit");
     await exitPromise;
     log("main", "Exit received, cleaning up");
+  } catch (error) {
+    exitCode = 1;
+    log("main", "ERROR in main", { error: error instanceof Error ? error.message : String(error) });
+    console.error("Error:", error instanceof Error ? error.message : String(error));
   } finally {
     log("main", "FINALLY BLOCK ENTERED");
     await releaseLock();
-    log("main", "Lock released, exiting process");
-    process.exit(0);
+    log("main", "Lock released");
+    process.exitCode = exitCode;
   }
 }
 
 // Error handling wrapper for the main function
 main().catch((error) => {
   console.error("Error:", error instanceof Error ? error.message : String(error));
-  // Attempt to release lock even if main crashed
-  releaseLock().finally(() => {
-    process.exit(1);
-  });
+  process.exitCode = 1;
 });

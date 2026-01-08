@@ -13,6 +13,7 @@ import { homedir } from "os";
  */
 export interface RalphConfig {
   // CLI defaults (also used by index.ts loadGlobalConfig)
+  adapter?: string;
   model?: string;
   plan?: string;
   prompt?: string;
@@ -20,6 +21,13 @@ export interface RalphConfig {
   server?: string;
   serverTimeout?: number;
   agent?: string;
+  headless?: boolean;
+  format?: string;
+  timestamps?: boolean;
+  yes?: boolean;
+  autoReset?: boolean;
+  maxIterations?: number;
+  maxTime?: number;
 
   // Terminal launcher preferences
   /** Name of the preferred terminal (must match KnownTerminal.name) */

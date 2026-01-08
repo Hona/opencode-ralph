@@ -3,6 +3,7 @@ import type { KeyEvent } from "@opentui/core";
 import { createSignal, onCleanup, onMount, Setter, type Accessor } from "solid-js";
 import { Header } from "./components/header";
 import { Log } from "./components/log";
+import { TerminalPane } from "./components/terminal-pane";
 import { Footer } from "./components/footer";
 import { PausedOverlay } from "./components/paused";
 import { SteeringOverlay } from "./components/steering";
@@ -24,7 +25,7 @@ import { Tasks } from "./components/tasks";
 
 
 import { log } from "./util/log";
-import { createDebugSession } from "./loop";
+import { addSteeringContext, createDebugSession } from "./loop";
 import { createLoopState, type LoopStateStore, type LoopAction } from "./hooks/useLoopState";
 import { createLoopStats, type LoopStatsStore } from "./hooks/useLoopStats";
 
@@ -149,6 +150,7 @@ export function App(props: AppProps) {
   
   // Create loop state store using the hook architecture
   // This provides a reducer-based state management pattern with dispatch actions
+  const initialAdapterMode = props.options.adapter && props.options.adapter !== "opencode-server" ? "pty" : "sdk";
   const loopStore = createLoopState({
     status: "starting",
     iteration: props.persistedState.iterationTimes.length + 1,
@@ -159,6 +161,8 @@ export function App(props: AppProps) {
     linesRemoved: 0,
     events: [],
     isIdle: true,
+    adapterMode: initialAdapterMode,
+    terminalBuffer: "",
   });
   
   // Create loop stats store for tracking iteration timing and ETA
@@ -182,6 +186,8 @@ export function App(props: AppProps) {
     linesRemoved: 0,
     events: [],
     isIdle: true, // Starts idle, waiting for first LLM response
+    adapterMode: initialAdapterMode,
+    terminalBuffer: "",
   });
 
   // Steering mode state signals
@@ -191,6 +197,10 @@ export function App(props: AppProps) {
   // Tasks panel state signals
   const [showTasks, setShowTasks] = createSignal(false);
   const [tasks, setTasks] = createSignal<Task[]>([]);
+
+  // Terminal dimensions for PTY rendering
+  const [terminalCols, setTerminalCols] = createSignal(process.stdout.columns ?? 80);
+  const [terminalRows, setTerminalRows] = createSignal(process.stdout.rows ?? 24);
 
   // Function to refresh tasks from plan file
   const refreshTasks = async () => {
@@ -202,6 +212,10 @@ export function App(props: AppProps) {
 
   // Initialize tasks on mount and set up polling interval
   let tasksRefreshInterval: ReturnType<typeof setInterval> | null = null;
+  const handleResize = () => {
+    setTerminalCols(process.stdout.columns ?? 80);
+    setTerminalRows(process.stdout.rows ?? 24);
+  };
   
   onMount(() => {
     refreshTasks();
@@ -209,6 +223,7 @@ export function App(props: AppProps) {
     tasksRefreshInterval = setInterval(() => {
       refreshTasks();
     }, 2000);
+    process.stdout.on("resize", handleResize);
   });
 
   // Clean up tasks refresh interval on unmount
@@ -217,6 +232,7 @@ export function App(props: AppProps) {
       clearInterval(tasksRefreshInterval);
       tasksRefreshInterval = null;
     }
+    process.stdout.off("resize", handleResize);
   });
 
   // Export wrapped state setter for external access. Calls requestRender()
@@ -375,6 +391,7 @@ function AppContent(props: AppContentProps) {
    */
   const getAttachCommand = (): string | null => {
     const currentState = props.state();
+    if (currentState.adapterMode === "pty") return null;
     if (!currentState.sessionId) return null;
     
     const serverUrl = currentState.serverUrl || "http://localhost:10101";
@@ -475,16 +492,16 @@ function AppContent(props: AppContentProps) {
 
     // Register "Copy attach command" action
     command.register("copyAttach", () => [
-      {
-        title: "Copy attach command",
-        value: "copyAttach",
-        description: "Copy attach command to clipboard",
-        keybind: keymap.copyAttach.label,
-        disabled: !props.state().sessionId,
-        onSelect: () => {
-          copyAttachCommand();
+        {
+          title: "Copy attach command",
+          value: "copyAttach",
+          description: "Copy attach command to clipboard",
+          keybind: keymap.copyAttach.label,
+          disabled: !props.state().sessionId || props.state().adapterMode === "pty",
+          onSelect: () => {
+            copyAttachCommand();
+          },
         },
-      },
     ]);
 
     // Register "Choose default terminal" action
@@ -776,6 +793,17 @@ function AppContent(props: AppContentProps) {
    */
   const handleTerminalLaunch = async () => {
     const currentState = props.state();
+
+    if (currentState.adapterMode === "pty") {
+      dialog.show(() => (
+        <DialogAlert
+          title="Attach Not Available"
+          message="Attach commands are only available for OpenCode server sessions."
+          variant="warning"
+        />
+      ));
+      return;
+    }
     
     // Check for active session
     if (!currentState.sessionId) {
@@ -948,7 +976,7 @@ function AppContent(props: AppContentProps) {
     if (isColonKey(e) && !e.ctrl && !e.meta) {
       const currentState = props.state();
       // Only allow steering when there's an active session
-      if (currentState.sessionId) {
+      if (currentState.sessionId || currentState.adapterMode === "pty") {
         log("app", "Steering mode opened via ':' key");
         props.setCommandMode(true);
         props.setCommandInput("");
@@ -1018,14 +1046,26 @@ function AppContent(props: AppContentProps) {
         eta={props.loopStats.etaMs()}
         debug={props.options.debug}
       />
-      <Log events={props.state().events} isIdle={props.state().isIdle} errorRetryAt={props.state().errorRetryAt} />
+      {props.state().adapterMode === "pty" ? (
+        <TerminalPane
+          buffer={props.state().terminalBuffer || ""}
+          cols={terminalCols()}
+          rows={terminalRows()}
+        />
+      ) : (
+        <Log
+          events={props.state().events}
+          isIdle={props.state().isIdle}
+          errorRetryAt={props.state().errorRetryAt}
+        />
+      )}
       <Footer
         commits={props.state().commits}
         elapsed={props.loopStats.elapsedMs()}
         status={props.state().status}
         linesAdded={props.state().linesAdded}
         linesRemoved={props.state().linesRemoved}
-        sessionActive={!!props.state().sessionId}
+        sessionActive={!!props.state().sessionId || props.state().adapterMode === "pty"}
         tokens={props.state().tokens}
       />
       <PausedOverlay visible={props.state().status === "paused"} />
@@ -1036,6 +1076,7 @@ function AppContent(props: AppContentProps) {
           props.setCommandInput("");
         }}
         onSend={async (message) => {
+          addSteeringContext(message);
           if (globalSendMessage) {
             log("app", "Sending steering message", { message });
             await globalSendMessage(message);

@@ -46,8 +46,18 @@ describe("git utilities", () => {
 
       const count = await getCommitsSince(ancestorHash);
 
-      // There should be exactly 5 commits since HEAD~5
-      expect(count).toBe(5);
+      const countProc = Bun.spawn(
+        ["git", "rev-list", "--count", `${ancestorHash}..HEAD`],
+        { stdout: "pipe" },
+      );
+      const expectedCount = parseInt(
+        (await new Response(countProc.stdout).text()).trim(),
+        10,
+      );
+      await countProc.exited;
+
+      // Match git's own count to account for merge history.
+      expect(count).toBe(expectedCount);
     });
 
     it("should return 0 for invalid hash", async () => {
