@@ -5,6 +5,17 @@ import type { ToolEvent } from "../state";
 import { useTheme } from "../context/ThemeContext";
 import type { Theme } from "../lib/theme-resolver";
 
+/**
+ * Truncate text to fit within a maximum length, adding ellipsis if needed.
+ * @param text - The text to truncate
+ * @param maxLength - Maximum length including ellipsis
+ * @returns Truncated text with "..." suffix if truncated
+ */
+function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength - 3) + "...";
+}
+
 // Braille spinner frames for smooth animation
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
@@ -174,6 +185,7 @@ function SeparatorEvent(props: { event: ToolEvent; theme: Theme }) {
  * Verbose events (e.g., file reads) are dimmed with textMuted color.
  * 
  * Memoized to prevent re-computation of icon and color on every reactive update.
+ * Truncates text to fit within terminal width (one item per line).
  */
 function ToolEventItem(props: { event: ToolEvent; theme: Theme }) {
   const icon = createMemo(() => props.event.icon || DEFAULT_ICON);
@@ -181,13 +193,31 @@ function ToolEventItem(props: { event: ToolEvent; theme: Theme }) {
   const isVerbose = createMemo(() => props.event.verbose === true);
   // Use dimmed colors for verbose events
   const textColor = createMemo(() => isVerbose() ? props.theme.textMuted : props.theme.text);
+  
+  // Calculate available width: terminal width minus icon (2 chars) and scrollbar/margin (3 chars)
+  const availableWidth = createMemo(() => {
+    const termWidth = process.stdout.columns || 80;
+    return Math.max(20, termWidth - 5); // Reserve 5 chars for icon + space + margin
+  });
+  
+  // Truncate text and detail to fit on one line
+  const truncatedText = createMemo(() => {
+    const maxTextWidth = Math.floor(availableWidth() * 0.6); // 60% for main text
+    return truncateText(props.event.text, maxTextWidth);
+  });
+  
+  const truncatedDetail = createMemo(() => {
+    if (!props.event.detail) return undefined;
+    const maxDetailWidth = Math.floor(availableWidth() * 0.4) - 1; // 40% for detail, minus space
+    return truncateText(props.event.detail, maxDetailWidth);
+  });
 
   return (
     <box width="100%" flexDirection="row">
       <text fg={isVerbose() ? props.theme.textMuted : iconColor()}>{icon()}</text>
-      <text fg={textColor()}> {props.event.text}</text>
-      <Show when={props.event.detail}>
-        <text fg={props.theme.textMuted}> {props.event.detail}</text>
+      <text fg={textColor()}> {truncatedText()}</text>
+      <Show when={truncatedDetail()}>
+        <text fg={props.theme.textMuted}> {truncatedDetail()}</text>
       </Show>
     </box>
   );
@@ -198,14 +228,23 @@ function ToolEventItem(props: { event: ToolEvent; theme: Theme }) {
  * Format: {icon} {text}
  * Uses warning color for icon and dimmed text (textMuted) since reasoning
  * events are always verbose.
+ * Truncates text to fit within terminal width (one item per line).
  */
 function ReasoningEventItem(props: { event: ToolEvent; theme: Theme }) {
   const icon = TOOL_ICONS.thought;
+  
+  // Calculate available width: terminal width minus icon (2 chars) and scrollbar/margin (3 chars)
+  const availableWidth = createMemo(() => {
+    const termWidth = process.stdout.columns || 80;
+    return Math.max(20, termWidth - 5); // Reserve 5 chars for icon + space + margin
+  });
+  
+  const truncatedText = createMemo(() => truncateText(props.event.text, availableWidth()));
 
   return (
     <box width="100%" flexDirection="row">
       <text fg={props.theme.textMuted}>{icon}</text>
-      <text fg={props.theme.textMuted}> {props.event.text}</text>
+      <text fg={props.theme.textMuted}> {truncatedText()}</text>
     </box>
   );
 }
