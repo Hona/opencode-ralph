@@ -5,8 +5,20 @@ export type PersistedState = {
   planFile: string; // Which plan file we're working on
 };
 
+/**
+ * Token usage statistics for display.
+ * Tracks cumulative token counts across the session.
+ */
+export type TokenUsage = {
+  input: number;
+  output: number;
+  reasoning: number;
+  cacheRead: number;
+  cacheWrite: number;
+};
+
 export type LoopState = {
-  status: "starting" | "running" | "paused" | "complete" | "error";
+  status: "starting" | "running" | "paused" | "complete" | "error" | "ready";
   iteration: number;
   tasksComplete: number;
   totalTasks: number;
@@ -16,16 +28,27 @@ export type LoopState = {
   events: ToolEvent[];
   error?: string;
   isIdle: boolean; // True when waiting for LLM response, false when tool events are arriving
+  // Session lifecycle fields for steering mode
+  sessionId?: string;
+  serverUrl?: string;
+  attached?: boolean;
+  // Error backoff fields for retry countdown display
+  errorBackoffMs?: number; // Current backoff delay in milliseconds (undefined when no backoff active)
+  errorRetryAt?: number; // Timestamp (epoch ms) when next retry will occur (undefined when no backoff active)
+  // Token usage for display in footer
+  tokens?: TokenUsage;
 };
 
 export type ToolEvent = {
   iteration: number;
-  type: "tool" | "separator" | "spinner";
+  type: "tool" | "separator" | "spinner" | "reasoning";
   icon?: string;
   text: string;
   timestamp: number;
   duration?: number; // For separators: iteration duration
   commitCount?: number; // For separators: commits this iteration
+  detail?: string; // Optional additional detail (e.g., file path, tool args)
+  verbose?: boolean; // Whether this is a verbose/debug event (dim styling)
 };
 
 export const STATE_FILE = ".ralph-state.json";
@@ -69,4 +92,20 @@ export type LoopOptions = {
   planFile: string;
   model: string;
   prompt: string;
+  promptFile?: string;
+  serverUrl?: string;
+  serverTimeoutMs?: number;
+  agent?: string;
+  debug?: boolean;
+};
+
+/**
+ * Information about the current active session.
+ * Used for steering mode and session lifecycle management.
+ */
+export type SessionInfo = {
+  sessionId: string;
+  serverUrl: string;
+  attached: boolean;
+  sendMessage: (message: string) => Promise<void>;
 };

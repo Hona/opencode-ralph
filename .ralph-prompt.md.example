@@ -1,0 +1,22 @@
+# Ralph Custom Prompt Template
+
+This is an example custom prompt file for Ralph. Copy this to `.ralph-prompt.md` and customize.
+
+## Usage
+
+Ralph will automatically read `.ralph-prompt.md` from your project root, or you can specify a custom path:
+
+```bash
+ralph --prompt-file ./my-custom-prompt.md
+```
+
+## Placeholders
+
+- `{{PLAN_FILE}}` - Replaced with the plan file path (e.g., `plan.md`)
+- `{plan}` - Also replaced with the plan file path (legacy format)
+
+---
+
+## Example Prompt
+
+READ all of {{PLAN_FILE}}. Pick ONE task. If needed, verify via web/code search (this applies to packages, knowledge, deterministic data - NEVER VERIFY EDIT TOOLS WORKED OR THAT YOU COMMITED SOMETHING. BE PRAGMATIC ABOUT EVERYTHING). Complete task. Commit change (update the {{PLAN_FILE}} in the same commit). ONLY do one task unless GLARINGLY OBVIOUS steps should run together. Update {{PLAN_FILE}}. If you learn a critical operational detail, update AGENTS.md. When ALL tasks complete, create .ralph-done and exit. NEVER GIT PUSH. ONLY COMMIT.

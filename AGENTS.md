@@ -90,6 +90,83 @@ useKeyboard((e: KeyEvent) => {
 
 4. **Terminal title reset**: Call `renderer.setTerminalTitle("")` before `renderer.destroy()` to reset the window title on exit.
 
+## Local Development & Building
+
+### Building and Installing Locally
+
+**ALWAYS follow this exact sequence when asked to build/install:**
+
+```bash
+# 1. Run tests first
+bun test
+
+# 2. Build all platform binaries
+bun run build
+
+# 3. Install to /usr/local/bin (Linux/macOS)
+sudo cp dist/hona-ralph-cli-linux-x64/bin/ralph /usr/local/bin/ralph
+
+# 4. Verify installation
+ralph -v
+```
+
+**Platform-specific binary paths:**
+- Linux x64: `dist/hona-ralph-cli-linux-x64/bin/ralph`
+- Linux arm64: `dist/hona-ralph-cli-linux-arm64/bin/ralph`
+- macOS x64: `dist/hona-ralph-cli-darwin-x64/bin/ralph`
+- macOS arm64: `dist/hona-ralph-cli-darwin-arm64/bin/ralph`
+- Windows x64: `dist/hona-ralph-cli-windows-x64/bin/ralph.exe`
+
+### Version Handling
+
+**CRITICAL**: Version is injected at build time via Bun's `define` option, NOT read from package.json at runtime.
+
+In `src/index.ts`:
+```typescript
+// @ts-expect-error - RALPH_VERSION is replaced at build time
+const version: string = RALPH_VERSION;
+```
+
+In `scripts/build.ts`:
+```typescript
+define: {
+  RALPH_VERSION: JSON.stringify(version),
+},
+```
+
+**Never import version from package.json** - it won't work in compiled binaries.
+
+### Version Bumping Workflow
+
+When releasing a new version:
+
+```bash
+# 1. Bump version (creates commit automatically if --no-git-tag-version is omitted)
+npm version patch --no-git-tag-version
+
+# 2. Commit the version bump
+git add package.json
+git commit -m "chore: bump version to X.Y.Z"
+
+# 3. Build and install
+bun run build
+sudo cp dist/hona-ralph-cli-linux-x64/bin/ralph /usr/local/bin/ralph
+
+# 4. Verify
+ralph -v
+
+# 5. Push
+git push origin master
+```
+
+### Common Pitfalls
+
+1. **Stale binary in PATH**: Check `which -a ralph` - there may be an old binary in `~/.bun/bin/ralph` shadowing the new one. Remove it: `rm ~/.bun/bin/ralph`
+
+2. **Shell hash cache**: After installing, run `hash -r` to clear the shell's command cache
+
+3. **Forgetting to rebuild**: The version is baked into the binary at build time. Changing package.json does nothing until you rebuild.
+
 ## NPM Publishing
 
 To release a new version to npm, run:

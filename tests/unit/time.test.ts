@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { formatDuration, calculateEta, formatEta } from "../../src/util/time";
+import { formatDuration, calculateEta, formatEta, formatNumber } from "../../src/util/time";
 
 describe("time utilities", () => {
   describe("formatDuration", () => {
@@ -84,6 +84,54 @@ describe("time utilities", () => {
     describe("valid duration", () => {
       it("should format 300000ms as '~5m 0s remaining'", () => {
         expect(formatEta(300000)).toBe("~5m 0s remaining");
+      });
+    });
+  });
+
+  describe("formatNumber", () => {
+    describe("small numbers", () => {
+      it("should format 0 as '0'", () => {
+        expect(formatNumber(0)).toBe("0");
+      });
+
+      it("should format 123 as '123'", () => {
+        expect(formatNumber(123)).toBe("123");
+      });
+
+      it("should format 999 as '999'", () => {
+        expect(formatNumber(999)).toBe("999");
+      });
+    });
+
+    describe("thousands (K suffix)", () => {
+      it("should format 1000 as '1.0K'", () => {
+        expect(formatNumber(1000)).toBe("1.0K");
+      });
+
+      it("should format 1234 as '1.2K'", () => {
+        expect(formatNumber(1234)).toBe("1.2K");
+      });
+
+      it("should format 12500 as '12.5K'", () => {
+        expect(formatNumber(12500)).toBe("12.5K");
+      });
+
+      it("should format 999999 as '1000.0K'", () => {
+        expect(formatNumber(999999)).toBe("1000.0K");
+      });
+    });
+
+    describe("millions (M suffix)", () => {
+      it("should format 1000000 as '1.0M'", () => {
+        expect(formatNumber(1000000)).toBe("1.0M");
+      });
+
+      it("should format 2500000 as '2.5M'", () => {
+        expect(formatNumber(2500000)).toBe("2.5M");
+      });
+
+      it("should format 10000000 as '10.0M'", () => {
+        expect(formatNumber(10000000)).toBe("10.0M");
       });
     });
   });

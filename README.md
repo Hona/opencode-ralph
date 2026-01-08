@@ -60,11 +60,45 @@ ralph --reset                      # start fresh, ignore previous state
 | `--model, -m` | `opencode/claude-opus-4-5` | Model (provider/model format) |
 | `--prompt` | see below | Custom prompt (`{plan}` placeholder) |
 | `--reset, -r` | `false` | Reset state |
+| `--server, -s` | (none) | OpenCode server URL to connect to |
+| `--server-timeout` | `5000` | Health check timeout in ms |
 
 **Default prompt:**
 ```
 READ all of {plan}. Pick ONE task. If needed, verify via web/code search (this applies to packages, knowledge, deterministic data - NEVER VERIFY EDIT TOOLS WORKED OR THAT YOU COMMITED SOMETHING. BE PRAGMATIC ABOUT EVERYTHING). Complete task. Commit change (update the plan.md in the same commit). ONLY do one task unless GLARINGLY OBVIOUS steps should run together. Update {plan}. If you learn a critical operational detail, update AGENTS.md. When ALL tasks complete, create .ralph-done and exit. NEVER GIT PUSH. ONLY COMMIT.
 ```
+
+### Connecting to an Existing Server
+
+Ralph can connect to an already-running OpenCode server instead of starting its own:
+
+```bash
+# Connect to local server on custom port
+ralph --server http://localhost:5000
+
+# Connect to remote server (requires shared filesystem)
+ralph -s http://192.168.1.100:4190
+
+# With custom timeout
+ralph --server http://localhost:4190 --server-timeout 10000
+```
+
+**Important:** Ralph reads `plan.md` and git state locally. When connecting to a remote server, ensure both machines have access to the same working directory (e.g., via NFS mount or the same repo checkout).
+
+## Configuration
+
+Ralph reads configuration from `~/.config/ralph/config.json`:
+
+```json
+{
+  "model": "opencode/claude-opus-4-5",
+  "plan": "plan.md",
+  "server": "http://localhost:4190",
+  "serverTimeout": 5000
+}
+```
+
+CLI arguments override config file values.
 
 ## Keybindings
 
