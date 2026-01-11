@@ -39,7 +39,7 @@ export type Task = {
 
 // Regex to match markdown checkbox items
 // Captures: optional leading whitespace, checkbox state, and task text
-const CHECKBOX_PATTERN = /^(\s*)-\s*\[([ xX])\]\s*(.+)$/;
+const CHECKBOX_PATTERN = /^(\s*)-\s*\[([ xX])\]\s*(.+?)\r?$/;
 
 function normalizePrdItems(data: unknown): PrdItem[] | null {
   let items: unknown[] | null = null;
@@ -97,7 +97,7 @@ export function parsePrdItems(content: string): PrdItem[] | null {
 }
 
 function parseMarkdownTasks(content: string): Task[] {
-  const lines = content.split("\n");
+  const lines = content.split(/\r?\n/);
   const tasks: Task[] = [];
 
   // Track if we're inside a fenced code block
@@ -233,3 +233,15 @@ export async function validatePlanFile(path: string): Promise<PlanValidation> {
     issues: ["Plan file format is not recognized."],
   };
 }
+
+/**
+ * Validates if all tasks in a plan file are complete.
+ * Returns true only if all tasks are done and there is at least one task.
+ * @param planFile - Path to the plan file
+ * @returns Promise<boolean> - True if the plan is complete, false otherwise
+ */
+export async function validatePlanCompletion(planFile: string): Promise<boolean> {
+  const { done, total } = await parsePlan(planFile);
+  return total > 0 && done === total;
+}
+

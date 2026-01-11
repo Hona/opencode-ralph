@@ -2,7 +2,7 @@ import { createOpencodeServer, createOpencodeClient } from "@opencode-ai/sdk";
 import { getAdapter, initializeAdapters } from "./adapters/registry.js";
 import type { LoopOptions, PersistedState, SessionInfo, ToolEvent } from "./state.js";
 import { getHeadHash, getCommitsSince, getDiffStats } from "./git.js";
-import { parsePlan } from "./plan.js";
+import { parsePlan, validatePlanCompletion } from "./plan.js";
 import { log } from "./util/log.js";
 
 const DEFAULT_PROMPT = `READ all of {plan} and {progress}. Pick ONE task with passes=false (prefer highest-risk/highest-impact). Keep changes small: one logical change per commit. Update {plan} by setting passes=true and adding notes or steps as needed. Append a brief entry to {progress} with what changed and why. Run feedback loops before committing: bun run typecheck, bun test, bun run lint (if missing, note it in {progress} and continue). Commit change (update {plan} in the same commit). ONLY do one task unless GLARINGLY OBVIOUS steps should run together. Quality bar: production code, maintainable, tests when appropriate. If you learn a critical operational detail, update AGENTS.md. When ALL tasks complete, create .ralph-done and output <promise>COMPLETE</promise>. NEVER GIT PUSH. ONLY COMMIT.`;
@@ -46,6 +46,38 @@ export function calculateBackoffMs(attempt: number): number {
   
   return Math.round(cappedDelay + jitter);
 }
+
+/**
+ * Check if .ralph-done exists and handle completion logic.
+ * @returns true if valid (should exit), false if invalid (should continue)
+ */
+async function checkAndHandleDoneFile(
+  planFile: string,
+  debug: boolean | undefined,
+  callbacks: LoopCallbacks
+): Promise<boolean> {
+  const doneFile = Bun.file(".ralph-done");
+  if (await doneFile.exists()) {
+    const isValid = await validatePlanCompletion(planFile);
+    if (isValid) {
+      log("loop", debug ? ".ralph-done validated, completing" : ".ralph-done found, completing");
+      await doneFile.delete();
+      callbacks.onComplete();
+      return true;
+    } else {
+      if (debug) {
+        const { done, total } = await parsePlan(planFile);
+        log("loop", `WARNING: Premature .ralph-done detected. Only ${done}/${total} tasks complete. Continuing iteration.`);
+      } else {
+        log("loop", "Premature .ralph-done detected, continuing iteration");
+      }
+      await doneFile.delete();
+      return false;
+    }
+  }
+  return false;
+}
+
 const DEFAULT_HOSTNAME = "127.0.0.1";
 
 /**
@@ -475,11 +507,7 @@ export async function runLoop(
     // Main loop
     while (!signal.aborted) {
       // Check for .ralph-done file at start of each iteration
-      const doneFile = Bun.file(".ralph-done");
-      if (await doneFile.exists()) {
-        log("loop", ".ralph-done found, completing");
-        await doneFile.delete();
-        callbacks.onComplete();
+      if (await checkAndHandleDoneFile(options.planFile, options.debug, callbacks)) {
         break;
       }
 
@@ -851,15 +879,13 @@ async function runPtyLoop(
   let errorCount = 0;
 
   while (!signal.aborted) {
-    const doneFile = Bun.file(".ralph-done");
-    if (await doneFile.exists()) {
-      log("loop", ".ralph-done found, completing");
-      await doneFile.delete();
-      callbacks.onComplete();
+    if (await checkAndHandleDoneFile(options.planFile, options.debug, callbacks)) {
       break;
     }
 
+
     const pauseFile = Bun.file(".ralph-pause");
+
     if (await pauseFile.exists()) {
       if (!isPaused) {
         isPaused = true;
