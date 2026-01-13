@@ -1,10 +1,12 @@
-import { render, useKeyboard, useRenderer } from "@opentui/solid";
+import { render, useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid";
 import type { KeyEvent } from "@opentui/core";
-import { createSignal, onCleanup, onMount, Setter, type Accessor } from "solid-js";
+import { createEffect, createMemo, createSignal, onCleanup, onMount, Setter, type Accessor } from "solid-js";
 import { Header } from "./components/header";
-import { Log } from "./components/log";
-import { TerminalPane } from "./components/terminal-pane";
 import { Footer } from "./components/footer";
+import { LeftPanel } from "./components/left-panel";
+import { RightPanel } from "./components/right-panel";
+import { ProgressDashboard } from "./components/progress-dashboard";
+import { HelpOverlay } from "./components/help-overlay";
 import { PausedOverlay } from "./components/paused";
 import { SteeringOverlay } from "./components/steering";
 import { DialogProvider, DialogStack, useDialog, useInputFocus } from "./context/DialogContext";
@@ -15,18 +17,19 @@ import { ToastStack } from "./components/toast";
 import { DialogSelect, type SelectOption } from "./ui/DialogSelect";
 import { DialogAlert } from "./ui/DialogAlert";
 import { DialogPrompt } from "./ui/DialogPrompt";
-import { keymap, matchesKeybind, type KeybindDef } from "./lib/keymap";
+import { keymap, matchesKeybind } from "./lib/keymap";
 import type { LoopState, LoopOptions, PersistedState } from "./state";
 import { detectInstalledTerminals, launchTerminal, getAttachCommand as getAttachCmdFromTerminal, type KnownTerminal } from "./lib/terminal-launcher";
 import { copyToClipboard, detectClipboardTool } from "./lib/clipboard";
 import { loadConfig, setPreferredTerminal } from "./lib/config";
 import { parsePlanTasks, type Task } from "./plan";
-import { Tasks } from "./components/tasks";
+import { layout } from "./components/tui-theme";
+import type { DetailsViewMode, UiTask } from "./components/tui-types";
 
 
 import { log } from "./util/log";
 import { addSteeringContext, createDebugSession } from "./loop";
-import { createLoopState, type LoopStateStore, type LoopAction } from "./hooks/useLoopState";
+import { createLoopState, type LoopStateStore } from "./hooks/useLoopState";
 import { createLoopStats, type LoopStatsStore } from "./hooks/useLoopStats";
 
 type AppProps = {
@@ -58,13 +61,26 @@ export type StartAppResult = {
 let globalSetState: Setter<LoopState> | null = null;
 let globalUpdateIterationTimes: ((times: number[]) => void) | null = null;
 let globalSendMessage: ((message: string) => Promise<void>) | null = null;
+let globalRenderer: ReturnType<typeof useRenderer> | null = null;
+let rendererDestroyed = false;
 
-
+export function destroyRenderer(): void {
+  if (!globalRenderer || rendererDestroyed) {
+    return;
+  }
+  rendererDestroyed = true;
+  globalRenderer.setTerminalTitle("");
+  globalRenderer.destroy();
+}
 
 /**
  * Main App component with state signals.
  * Manages LoopState and elapsed time, rendering the full TUI layout.
  */
+/**
+ * Props for starting the app, including optional keyboard detection callback.
+ */
+
 /**
  * Props for starting the app, including optional keyboard detection callback.
  */
@@ -94,6 +110,7 @@ export async function startApp(props: StartAppProps): Promise<StartAppResult> {
   
   const onQuit = () => {
     log("app", "onQuit callback invoked");
+    destroyRenderer();
     props.onQuit();
     exitResolve();
   };
@@ -143,6 +160,8 @@ export async function startApp(props: StartAppProps): Promise<StartAppResult> {
 export function App(props: AppProps) {
   // Get renderer for cleanup on quit
   const renderer = useRenderer();
+  globalRenderer = renderer;
+  rendererDestroyed = false;
   
   // Disable stdout interception to prevent OpenTUI from capturing stdout
   // which may interfere with logging and other output (matches OpenCode pattern).
@@ -195,12 +214,8 @@ export function App(props: AppProps) {
   const [commandInput, setCommandInput] = createSignal("");
 
   // Tasks panel state signals
-  const [showTasks, setShowTasks] = createSignal(false);
+  const [showTasks, setShowTasks] = createSignal(true);
   const [tasks, setTasks] = createSignal<Task[]>([]);
-
-  // Terminal dimensions for PTY rendering
-  const [terminalCols, setTerminalCols] = createSignal(process.stdout.columns ?? 80);
-  const [terminalRows, setTerminalRows] = createSignal(process.stdout.rows ?? 24);
 
   // Function to refresh tasks from plan file
   const refreshTasks = async () => {
@@ -212,18 +227,13 @@ export function App(props: AppProps) {
 
   // Initialize tasks on mount and set up polling interval
   let tasksRefreshInterval: ReturnType<typeof setInterval> | null = null;
-  const handleResize = () => {
-    setTerminalCols(process.stdout.columns ?? 80);
-    setTerminalRows(process.stdout.rows ?? 24);
-  };
-  
+
   onMount(() => {
     refreshTasks();
     // Poll for task updates every 2 seconds
     tasksRefreshInterval = setInterval(() => {
       refreshTasks();
     }, 2000);
-    process.stdout.on("resize", handleResize);
   });
 
   // Clean up tasks refresh interval on unmount
@@ -232,7 +242,6 @@ export function App(props: AppProps) {
       clearInterval(tasksRefreshInterval);
       tasksRefreshInterval = null;
     }
-    process.stdout.off("resize", handleResize);
   });
 
   // Export wrapped state setter for external access. Calls requestRender()
@@ -266,9 +275,11 @@ export function App(props: AppProps) {
 
   onCleanup(() => {
     clearInterval(elapsedInterval);
+    destroyRenderer();
     // Clean up module-level references
     globalSetState = null;
     globalUpdateIterationTimes = null;
+    globalRenderer = null;
   });
 
   // Pause file path
@@ -332,9 +343,6 @@ export function App(props: AppProps) {
               showTasks={showTasks}
               setShowTasks={setShowTasks}
               tasks={tasks}
-              refreshTasks={refreshTasks}
-              terminalCols={terminalCols}
-              terminalRows={terminalRows}
               loopStore={loopStore}
               loopStats={loopStats}
             />
@@ -364,9 +372,6 @@ type AppContentProps = {
   showTasks: () => boolean;
   setShowTasks: (v: boolean) => void;
   tasks: () => Task[];
-  refreshTasks: () => Promise<void>;
-  terminalCols: Accessor<number>;
-  terminalRows: Accessor<number>;
   // Hook-based state stores (for gradual migration)
   loopStore: LoopStateStore;
   loopStats: LoopStatsStore;
@@ -388,6 +393,72 @@ function AppContent(props: AppContentProps) {
 
   // Combined check for any input being focused
   const isInputFocused = () => props.commandMode() || dialogInputFocused();
+
+  const terminalDimensions = useTerminalDimensions();
+  const [selectedTaskIndex, setSelectedTaskIndex] = createSignal(0);
+  const [detailsViewMode, setDetailsViewMode] = createSignal<DetailsViewMode>("details");
+  const [showHelp, setShowHelp] = createSignal(false);
+  const [showDashboard, setShowDashboard] = createSignal(false);
+
+  const uiTasks = createMemo<UiTask[]>(() =>
+    props.tasks().map((task) => ({
+      id: task.id,
+      title: task.text,
+      status: task.done ? "done" : "actionable",
+      line: task.line,
+    }))
+  );
+
+  const selectedTask = createMemo(() => {
+    const list = uiTasks();
+    if (list.length === 0) return null;
+    return list[Math.min(selectedTaskIndex(), list.length - 1)];
+  });
+
+  createEffect(() => {
+    const list = uiTasks();
+    if (list.length === 0) {
+      setSelectedTaskIndex(0);
+      return;
+    }
+    if (selectedTaskIndex() >= list.length) {
+      setSelectedTaskIndex(list.length - 1);
+    }
+  });
+
+  createEffect(() => {
+    if (props.state().adapterMode === "pty" && detailsViewMode() === "details") {
+      setDetailsViewMode("output");
+    }
+  });
+
+  const isCompact = createMemo(() => terminalDimensions().width < 80);
+  const dashboardHeight = createMemo(() => (showDashboard() ? layout.progressDashboard.height : 0));
+  const contentHeight = createMemo(() =>
+    Math.max(
+      1,
+      terminalDimensions().height - layout.header.height - layout.footer.height - dashboardHeight()
+    )
+  );
+  const leftPanelWidth = createMemo(() => {
+    if (isCompact()) return terminalDimensions().width;
+    const desired = Math.floor(
+      (terminalDimensions().width * layout.leftPanel.defaultWidthPercent) / 100
+    );
+    return Math.min(layout.leftPanel.maxWidth, Math.max(layout.leftPanel.minWidth, desired));
+  });
+  const rightPanelWidth = createMemo(() => {
+    if (isCompact()) return terminalDimensions().width;
+    return props.showTasks()
+      ? terminalDimensions().width - leftPanelWidth()
+      : terminalDimensions().width;
+  });
+  const rightPanelRows = createMemo(() => {
+    const baseHeight = contentHeight();
+    const paneHeight = isCompact() && props.showTasks() ? Math.floor(baseHeight / 2) : baseHeight;
+    return Math.max(4, paneHeight - 2);
+  });
+  const rightPanelCols = createMemo(() => Math.max(20, rightPanelWidth() - 2));
 
   /**
    * Get the attach command string for the current session.
@@ -524,9 +595,9 @@ function AppContent(props: AppContentProps) {
     // Register "Toggle tasks panel" action
     command.register("toggleTasks", () => [
       {
-        title: props.showTasks() ? "Hide tasks panel" : "Show tasks panel",
+        title: props.showTasks() ? "Hide task list" : "Show task list",
         value: "toggleTasks",
-        description: "Show/hide the tasks checklist from plan file",
+        description: "Show/hide the task list from the plan file",
         keybind: keymap.toggleTasks.label,
         onSelect: () => {
           log("app", "Tasks panel toggled via command palette");
@@ -953,8 +1024,6 @@ function AppContent(props: AppContentProps) {
     // This ensures users can always exit the app without killing the terminal
     if (key === "c" && e.ctrl) {
       log("app", "Quit requested via Ctrl+C (safety valve)");
-      props.renderer.setTerminalTitle("");
-      props.renderer.destroy();
       props.onQuit();
       return;
     }
@@ -962,10 +1031,46 @@ function AppContent(props: AppContentProps) {
     // Skip if any input is focused (dialogs, steering mode, etc.)
     if (isInputFocused()) return;
 
+    if (showHelp()) {
+      if (key === "escape" || key === "?") {
+        setShowHelp(false);
+      }
+      return;
+    }
+
+    if (key === "?" || (e.name === "/" && e.shift)) {
+      setShowHelp(!showHelp());
+      return;
+    }
+
+    if (key === "d" && !e.ctrl && !e.meta && !e.shift) {
+      setShowDashboard(!showDashboard());
+      return;
+    }
+
+    if (key === "o" && !e.ctrl && !e.meta) {
+      setDetailsViewMode((mode) => (mode === "details" ? "output" : "details"));
+      return;
+    }
+
     // ESC key: close tasks panel if open
     if (key === "escape" && props.showTasks()) {
       log("app", "Tasks panel closed via ESC");
       props.setShowTasks(false);
+      return;
+    }
+
+    if (props.showTasks() && (key === "up" || key === "k")) {
+      if (selectedTaskIndex() > 0) {
+        setSelectedTaskIndex(selectedTaskIndex() - 1);
+      }
+      return;
+    }
+
+    if (props.showTasks() && (key === "down" || key === "j")) {
+      if (selectedTaskIndex() < uiTasks().length - 1) {
+        setSelectedTaskIndex(selectedTaskIndex() + 1);
+      }
       return;
     }
 
@@ -1026,8 +1131,6 @@ function AppContent(props: AppContentProps) {
     // Phase 2.2: Use matchesKeybind for consistent key routing
     if (matchesKeybind(e, keymap.quit)) {
       log("app", "Quit requested via 'q' key");
-      props.renderer.setTerminalTitle("");
-      props.renderer.destroy();
       props.onQuit();
       return;
     }
@@ -1047,22 +1150,47 @@ function AppContent(props: AppContentProps) {
         iteration={props.state().iteration}
         tasksComplete={props.state().tasksComplete}
         totalTasks={props.state().totalTasks}
+        elapsedMs={props.loopStats.elapsedMs()}
         eta={props.loopStats.etaMs()}
         debug={props.options.debug}
+        selectedTask={selectedTask()}
+        agentName={props.options.agent}
+        adapterName={props.options.adapter ?? props.state().adapterMode}
       />
-      {props.state().adapterMode === "pty" ? (
-        <TerminalPane
-          buffer={props.state().terminalBuffer || ""}
-          cols={props.terminalCols()}
-          rows={props.terminalRows()}
+      {showDashboard() && (
+        <ProgressDashboard
+          status={props.state().status}
+          agentName={props.options.agent}
+          adapterName={props.options.adapter ?? props.state().adapterMode}
+          planName={props.options.planFile}
+          currentTaskId={selectedTask()?.id}
+          currentTaskTitle={selectedTask()?.title}
         />
-      ) : (
-        <Log
+      )}
+      <box
+        flexGrow={1}
+        flexDirection={isCompact() ? "column" : "row"}
+        height={contentHeight()}
+      >
+        {props.showTasks() && (
+          <LeftPanel
+            tasks={uiTasks()}
+            selectedIndex={selectedTaskIndex()}
+            width={leftPanelWidth()}
+          />
+        )}
+        <RightPanel
+          selectedTask={selectedTask()}
+          viewMode={detailsViewMode()}
+          adapterMode={props.state().adapterMode ?? "sdk"}
           events={props.state().events}
           isIdle={props.state().isIdle}
           errorRetryAt={props.state().errorRetryAt}
+          terminalBuffer={props.state().terminalBuffer || ""}
+          terminalCols={rightPanelCols()}
+          terminalRows={rightPanelRows()}
         />
-      )}
+      </box>
       <Footer
         commits={props.state().commits}
         elapsed={props.loopStats.elapsedMs()}
@@ -1089,35 +1217,7 @@ function AppContent(props: AppContentProps) {
           }
         }}
       />
-      {/* Tasks Panel Overlay (right-side panel) */}
-      {props.showTasks() && (
-        <box
-          position="absolute"
-          top={2}
-          right={0}
-          width={40}
-          height="80%"
-          flexDirection="column"
-          borderStyle="single"
-          borderColor={t().secondary}
-          backgroundColor={t().backgroundPanel}
-        >
-          <box
-            width="100%"
-            height={1}
-            paddingLeft={1}
-            backgroundColor={t().backgroundPanel}
-          >
-            <text fg={t().secondary}>Tasks</text>
-            <box flexGrow={1} />
-            <text fg={t().textMuted}>ESC to close</text>
-          </box>
-          <Tasks
-            tasks={props.tasks()}
-            onClose={() => props.setShowTasks(false)}
-          />
-        </box>
-      )}
+      <HelpOverlay visible={showHelp()} />
       <DialogStack />
       <ToastStack />
     </box>

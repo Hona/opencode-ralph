@@ -6,7 +6,7 @@ import { acquireLock, releaseLock } from "./lock";
 import { loadState, saveState, PersistedState, LoopOptions, trimEventsInPlace, LoopState } from "./state";
 import { confirm } from "./prompt";
 import { getHeadHash, getDiffStats, getCommitsSince } from "./git";
-import { startApp } from "./app";
+import { startApp, destroyRenderer } from "./app";
 import { runLoop } from "./loop";
 import { runHeadlessMode } from "./headless";
 import { runInit } from "./init";
@@ -500,7 +500,9 @@ async function main() {
     // Cleanup function for graceful shutdown
     async function cleanup() {
       log("main", "cleanup() called");
+      destroyRenderer();
       clearInterval(keepaliveInterval);
+
       if (fallbackTimeout) clearTimeout(fallbackTimeout); // Task 4.3: Clean up fallback timeout
       // Phase 3.3: Restore raw mode if fallback enabled it
       if (fallbackRawModeEnabled && process.stdin.isTTY) {
@@ -926,6 +928,7 @@ async function main() {
     console.error("Error:", error instanceof Error ? error.message : String(error));
   } finally {
     log("main", "FINALLY BLOCK ENTERED");
+    destroyRenderer();
     await releaseLock();
     log("main", "Lock released");
     process.exitCode = exitCode;
