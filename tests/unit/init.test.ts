@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { runInit } from "../../src/init";
+import { runInit, isGeneratedPrd, isGeneratedPrompt, isGeneratedProgress, GENERATED_PROMPT_MARKER } from "../../src/init";
 import { TempDir } from "../helpers/temp-files";
 
 describe("runInit", () => {
@@ -35,9 +35,13 @@ describe("runInit", () => {
     expect(prdExists).toBe(true);
 
     const prdContent = await Bun.file(prdPath).json();
-    expect(Array.isArray(prdContent)).toBe(true);
-    expect(prdContent.length).toBe(2);
-    expect(prdContent[0]).toMatchObject({
+    // PRD is now wrapped with metadata
+    expect(prdContent.metadata).toBeDefined();
+    expect(prdContent.metadata.generated).toBe(true);
+    expect(prdContent.metadata.generator).toBe("ralph-init");
+    expect(Array.isArray(prdContent.items)).toBe(true);
+    expect(prdContent.items.length).toBe(2);
+    expect(prdContent.items[0]).toMatchObject({
       description: "First task",
       passes: false,
     });
@@ -61,10 +65,129 @@ describe("runInit", () => {
       });
 
       const prdContent = await Bun.file(prdPath).json();
-      expect(prdContent.length).toBe(2);
+      // PRD is now wrapped with metadata
+      expect(prdContent.metadata).toBeDefined();
+      expect(prdContent.items.length).toBe(2);
       expect(result.warnings.some((warning) => warning.includes("plan.md"))).toBe(true);
     } finally {
       process.chdir(originalCwd);
     }
+  });
+
+  it("should add frontmatter marker to generated prompt file", async () => {
+    const planPath = await tempDir.write("plan.md", "# Plan\n- [ ] Task\n");
+    const progressPath = tempDir.path("progress.txt");
+    const promptPath = tempDir.path(".ralph-prompt.md");
+
+    await runInit({
+      planFile: planPath,
+      progressFile: progressPath,
+      promptFile: promptPath,
+    });
+
+    const promptContent = await Bun.file(promptPath).text();
+    expect(promptContent.startsWith(GENERATED_PROMPT_MARKER)).toBe(true);
+    expect(isGeneratedPrompt(promptContent)).toBe(true);
+  });
+
+  it("should include sourceFile in PRD metadata when initialized from a source", async () => {
+    const planPath = await tempDir.write("plan.md", "# Plan\n- [ ] Task\n");
+    const progressPath = tempDir.path("progress.txt");
+    const promptPath = tempDir.path(".ralph-prompt.md");
+    const prdPath = tempDir.path("prd.json");
+
+    await runInit({
+      planFile: planPath,
+      progressFile: progressPath,
+      promptFile: promptPath,
+    });
+
+    const prdContent = await Bun.file(prdPath).json();
+    expect(prdContent.metadata.sourceFile).toBe(planPath);
+  });
+});
+
+describe("isGeneratedPrd", () => {
+  it("should return true for generated PRD with metadata", () => {
+    const content = JSON.stringify({
+      metadata: {
+        generated: true,
+        generator: "ralph-init",
+        createdAt: "2025-01-01T00:00:00.000Z",
+      },
+      items: [{ description: "Task", passes: false }],
+    });
+    expect(isGeneratedPrd(content)).toBe(true);
+  });
+
+  it("should return false for plain array PRD", () => {
+    const content = JSON.stringify([{ description: "Task", passes: false }]);
+    expect(isGeneratedPrd(content)).toBe(false);
+  });
+
+  it("should return false for PRD with wrong generator", () => {
+    const content = JSON.stringify({
+      metadata: {
+        generated: true,
+        generator: "other-tool",
+        createdAt: "2025-01-01T00:00:00.000Z",
+      },
+      items: [{ description: "Task", passes: false }],
+    });
+    expect(isGeneratedPrd(content)).toBe(false);
+  });
+
+  it("should return false for non-JSON content", () => {
+    expect(isGeneratedPrd("# Not JSON")).toBe(false);
+  });
+
+  it("should return false for invalid JSON", () => {
+    expect(isGeneratedPrd("{ invalid json }")).toBe(false);
+  });
+});
+
+describe("isGeneratedPrompt", () => {
+  it("should return true for prompt with generated frontmatter", () => {
+    const content = `---
+generated: true
+generator: ralph-init
+safe_to_delete: true
+---
+READ all of plan.md`;
+    expect(isGeneratedPrompt(content)).toBe(true);
+  });
+
+  it("should return false for prompt without frontmatter", () => {
+    const content = "READ all of plan.md";
+    expect(isGeneratedPrompt(content)).toBe(false);
+  });
+
+  it("should return false for prompt with different frontmatter", () => {
+    const content = `---
+title: My Custom Prompt
+---
+READ all of plan.md`;
+    expect(isGeneratedPrompt(content)).toBe(false);
+  });
+});
+
+describe("isGeneratedProgress", () => {
+  it("should return true for progress with init marker", () => {
+    const content = `# Ralph Progress
+
+## Iteration 0 - Initialized 2025-01-01T00:00:00.000Z
+- Plan: prd.json
+- Notes: Initialized via ralph init.
+`;
+    expect(isGeneratedProgress(content)).toBe(true);
+  });
+
+  it("should return false for user-created progress", () => {
+    const content = `# My Progress
+
+## Task 1
+- Did something
+`;
+    expect(isGeneratedProgress(content)).toBe(false);
   });
 });
