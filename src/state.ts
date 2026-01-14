@@ -69,4 +69,5 @@ export type LoopOptions = {
   planFile: string;
   model: string;
   prompt: string;
+  variant?: string;
 };

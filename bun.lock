@@ -5,7 +5,7 @@
     "": {
       "name": "opencode-ralph",
       "dependencies": {
-        "@opencode-ai/sdk": "1.1.1",
+        "@opencode-ai/sdk": "1.1.19",
         "@opentui/core": "0.1.68",
         "@opentui/solid": "0.1.68",
         "solid-js": "^1.9.0",
@@ -143,7 +143,7 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
-    "@opencode-ai/sdk": ["@opencode-ai/sdk@1.1.1", "", {}, "sha512-PfXujMrHGeMnpS8Gd2BXSY+zZajlztcAvcokf06NtAhd0Mbo/hCLXgW0NBCQ+3FX3e/G2PNwz2DqMdtzyIZaCQ=="],
+    "@opencode-ai/sdk": ["@opencode-ai/sdk@1.1.19", "", {}, "sha512-XhZhFuvlLCqDpvNtUEjOsi/wvFj3YCXb1dySp+OONQRMuHlorNYnNa7P2A2ntKuhRdGT1Xt5na0nFzlUyNw+4A=="],
 
     "@opentui/core": ["@opentui/core@0.1.68", "", { "dependencies": { "bun-ffi-structs": "0.1.2", "diff": "8.0.2", "jimp": "1.6.0", "yoga-layout": "3.2.1" }, "optionalDependencies": { "@dimforge/rapier2d-simd-compat": "^0.17.3", "@opentui/core-darwin-arm64": "0.1.68", "@opentui/core-darwin-x64": "0.1.68", "@opentui/core-linux-arm64": "0.1.68", "@opentui/core-linux-x64": "0.1.68", "@opentui/core-win32-arm64": "0.1.68", "@opentui/core-win32-x64": "0.1.68", "bun-webgpu": "0.1.4", "planck": "^1.4.2", "three": "0.177.0" }, "peerDependencies": { "web-tree-sitter": "0.25.10" } }, "sha512-SZz5qNO+2lJ8jDEoTSieyXH23t49myu6NetLex+xzqOf67XsU6QKlDcw5oMmc3zrKvETXhgbBvlSnbyJNQoBMg=="],
 

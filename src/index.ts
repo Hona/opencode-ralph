@@ -16,6 +16,7 @@ interface RalphConfig {
   model?: string;
   plan?: string;
   prompt?: string;
+  variant?: string;
 }
 
 function loadGlobalConfig(): RalphConfig {
@@ -142,6 +143,11 @@ async function main() {
       description: "Model to use (provider/model format)",
       default: globalConfig.model || "opencode/claude-opus-4-5",
     })
+    .option("variant", {
+      type: "string",
+      description: "Model variant to use (must exist in OpenCode config)",
+      default: globalConfig.variant,
+    })
     .option("prompt", {
       type: "string",
       description: "Custom prompt template (use {plan} as placeholder)",
@@ -207,7 +213,12 @@ async function main() {
     // Initialize logging (reset log when state is reset)
     const isNewRun = !stateToUse;
     initLog(isNewRun);
-    log("main", "Ralph starting", { plan: argv.plan, model: argv.model, reset: shouldReset });
+    log("main", "Ralph starting", {
+      plan: argv.plan,
+      model: argv.model,
+      variant: argv.variant,
+      reset: shouldReset,
+    });
     
     // Create fresh state if needed
     if (!stateToUse) {
@@ -229,6 +240,7 @@ async function main() {
       planFile: argv.plan,
       model: argv.model,
       prompt: argv.prompt || "",
+      variant: argv.variant,
     };
 
 // Create abort controller for cancellation

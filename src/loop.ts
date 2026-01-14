@@ -1,4 +1,4 @@
-import { createOpencodeServer, createOpencodeClient } from "@opencode-ai/sdk";
+import { createOpencodeServer, createOpencodeClient } from "@opencode-ai/sdk/v2";
 import type { LoopOptions, PersistedState, ToolEvent } from "./state.js";
 import { getHeadHash, getCommitsSince, getDiffStats } from "./git.js";
 import { parsePlan } from "./plan.js";
@@ -102,7 +102,11 @@ export async function runLoop(
   callbacks: LoopCallbacks,
   signal: AbortSignal,
 ): Promise<void> {
-  log("loop", "runLoop started", { planFile: options.planFile, model: options.model });
+  log("loop", "runLoop started", {
+    planFile: options.planFile,
+    model: options.model,
+    variant: options.variant,
+  });
   
   let server: { url: string; close(): void; attached: boolean } | null = null;
 
@@ -216,11 +220,10 @@ export async function runLoop(
 
           // Fire prompt in background - don't block event loop
           client.session.prompt({
-            path: { id: sessionId },
-            body: {
-              parts: [{ type: "text", text: promptText }],
-              model: { providerID, modelID },
-            },
+            sessionID: sessionId,
+            parts: [{ type: "text", text: promptText }],
+            model: { providerID, modelID },
+            variant: options.variant,
           }).catch((e) => {
             log("loop", "Prompt error", { error: String(e) });
           });

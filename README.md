@@ -51,6 +51,7 @@ See: [ghuntley.com/ralph](https://ghuntley.com/ralph/) · [lukeparker.dev/stop-c
 ralph                              # uses plan.md in current directory
 ralph --plan BACKLOG.md            # different plan file
 ralph --model anthropic/claude-opus-4  # different model
+ralph --model openai/gpt-5.2-codex --variant xhigh  # model + variant
 ralph --reset                      # start fresh, ignore previous state
 ```
 
@@ -58,6 +59,7 @@ ralph --reset                      # start fresh, ignore previous state
 |--------|---------|-------------|
 | `--plan, -p` | `plan.md` | Plan file path |
 | `--model, -m` | `opencode/claude-opus-4-5` | Model (provider/model format) |
+| `--variant` | `none` | Model variant (must exist in OpenCode config) |
 | `--prompt` | see below | Custom prompt (`{plan}` placeholder) |
 | `--reset, -r` | `false` | Reset state |
 

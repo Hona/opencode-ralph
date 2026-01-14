@@ -73,7 +73,7 @@ function createMockEventStream() {
 const mockEventSubscribe = mock(() => Promise.resolve(createMockEventStream()));
 
 // Mock the SDK module
-mock.module("@opencode-ai/sdk", () => ({
+mock.module("@opencode-ai/sdk/v2", () => ({
   createOpencodeServer: mock(() =>
     Promise.resolve({
       url: "http://localhost:4190",
